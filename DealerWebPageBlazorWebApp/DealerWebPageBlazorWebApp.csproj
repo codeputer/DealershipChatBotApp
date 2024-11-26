@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Components\WebChatComponent.razor.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Components\WebChatComponent.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DealershipChatBotAppAspire.ServiceDefaults\DealershipChatBotAppAspire.ServiceDefaults.csproj" />
   </ItemGroup>
 

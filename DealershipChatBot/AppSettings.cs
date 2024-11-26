@@ -10,7 +10,7 @@ public class AppSettings
       ?? throw new ArgumentNullException(nameof(configuration));
   }
 
-  public DealershipChatBotConfiguration DealershipChatBotConfiguration { get; set; }
+  public DealershipChatBotConfiguration DealershipChatBotConfiguration { get; init; }
 }
 
 

@@ -2,5 +2,5 @@
 
 public class ChatbotServiceConfiguration
 {
-  public required string chatbotServiceUrl { get; set; }
+  public required string ChatbotServiceUrl { get; init; }
 }
