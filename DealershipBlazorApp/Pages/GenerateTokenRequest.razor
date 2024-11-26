@@ -1,0 +1,38 @@
+﻿@page "/generate-token"
+@inject HttpClient Http
+
+<h3>Generate JWT Token</h3>
+
+<div>
+  <label for="dealershipId">Dealership ID:</label>
+  <input type="text" id="dealershipId" @bind="dealershipId" />
+</div>
+<div>
+  <button @onclick="GenerateToken">Generate Token</button>
+</div>
+
+@if (!string.IsNullOrEmpty(token))
+{
+  <div>
+    <h4>Generated Token:</h4>
+    <p>@token</p>
+  </div>
+}
+
+@code {
+  private string dealershipId;
+  private string token;
+
+  private async Task GenerateToken()
+  {
+    var response = await Http.GetAsync($"https://yourbackendurl.com/api/GenerateToken?dealershipId={dealershipId}");
+    if (response.IsSuccessStatusCode)
+    {
+      token = await response.Content.ReadAsStringAsync();
+    }
+    else
+    {
+      token = "Failed to generate token.";
+    }
+  }
+}

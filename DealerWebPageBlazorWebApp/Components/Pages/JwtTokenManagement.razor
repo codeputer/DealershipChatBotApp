@@ -1,0 +1,97 @@
+﻿@page "/jwttokenManagement"
+@inject IHttpClientFactory httpClientFactory
+@inject AppSettings appSettings
+@rendermode InteractiveServer
+@* @attribute [Authorize(Policy = "provideWebChatToken")] *@
+
+<PageTitle>Generate Token</PageTitle>
+
+<div>
+  <label for="dealershipId"><strong>Dealership ID:</strong></label>
+  <input type="text" id="dealershipId" @bind="dealershipId" />
+  <select id="tokenType" @bind="tokenType">
+    <option value="@TokenTypes.DealershipToken">@TokenTypes.DealershipToken</option>
+    <option value="@TokenTypes.WebChatToken">@TokenTypes.WebChatToken</option>
+  </select>
+</div>
+<div>
+  <button @onclick="GenerateToken" style="margin-top: 10px;">Generate Token</button>
+</div>
+
+@if (tokenAsReceivedFromTransport != null)
+{
+  <br />
+  <label for="jwtpanel"><strong>JWT Panel:</strong></label>
+  <br />
+  <textarea id="jwtpanel" @bind="jwtEncryptedBase64EndCoded" style="width: 100%; height: 250px; overflow: auto;"></textarea>
+  <div>
+    <button @onclick="DecryptBase64Token" style="margin-top: 10px;">Decrypt Token</button>
+  </div>
+}
+
+@if (decryptedTokenPanel != null)
+{
+  <br />
+  <label for="decryptedTokenPanel"><strong>Token Claims:</strong></label>
+  <br />
+  <textarea id="decryptedTokenPanel" @bind="decryptedTokenPanel" style="width: 100%; height: 250px; overflow: auto;"></textarea>
+}
+
+@code {
+  private string? dealershipId;
+  private string? tokenAsReceivedFromTransport;
+  private string? jwtEncryptedBase64EndCoded;
+  private string? tokenType = TokenTypes.WebChatToken;
+  private string? decryptedTokenPanel;
+
+  private async Task GenerateToken()
+  {
+    jwtEncryptedBase64EndCoded = "Generating token...";
+    var uriBuilder = new UriBuilder($"{appSettings.chatbotServiceConfiguration.chatbotServiceUrl}/api/GenerateToken");
+    var query = System.Web.HttpUtility.ParseQueryString(uriBuilder.Query);
+    query["dealershipId"] = dealershipId;
+    query["tokenType"] = tokenType;
+    uriBuilder.Query = query.ToString();
+    var url = uriBuilder.ToString();
+
+    var httpClient = httpClientFactory.CreateClient();
+    var response = await httpClient.GetAsync(url);
+    if (response.IsSuccessStatusCode)
+    {
+      tokenAsReceivedFromTransport = await response.Content.ReadAsStringAsync();
+    }
+    else
+    {
+      tokenAsReceivedFromTransport = "Failed to generate token.";
+    }
+    jwtEncryptedBase64EndCoded = tokenAsReceivedFromTransport.Trim('"'); //the token and jwtpanel are in base 64 encoded format, no quotes
+  }
+
+  private async Task DecryptBase64Token()
+  {
+    //panel is in base 64 encoded format, no q
+    if (string.IsNullOrEmpty(jwtEncryptedBase64EndCoded))
+    {
+      decryptedTokenPanel = "No token to decrypt.";
+      return;
+    }
+
+    var uriBuilder = new UriBuilder($"{appSettings.chatbotServiceConfiguration.chatbotServiceUrl}/api/DecryptToken");
+    var query = System.Web.HttpUtility.ParseQueryString(uriBuilder.Query);
+    query["encryptedToken"] = jwtEncryptedBase64EndCoded;
+    uriBuilder.Query = query.ToString();
+    var url = uriBuilder.ToString();
+
+    var httpDecryptJWTTokenClient = httpClientFactory.CreateClient();
+    var response = await httpDecryptJWTTokenClient.GetAsync(url);
+    if (response.IsSuccessStatusCode)
+    {
+      var responseContent = await response.Content.ReadAsStringAsync();
+      decryptedTokenPanel = responseContent.Trim('"'); // Remove quotes from the response
+    }
+    else
+    {
+      decryptedTokenPanel = "Failed to decrypt token.";
+    }
+  }
+}
