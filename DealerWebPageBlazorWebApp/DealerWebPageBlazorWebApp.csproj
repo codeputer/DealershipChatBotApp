@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DealershipChatBotAppAspire.ServiceDefaults\DealershipChatBotAppAspire.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\DealerWebPageBlazorWebApp.Client\DealerWebPageBlazorWebApp.Client.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0" />
   </ItemGroup>
 
 </Project>
