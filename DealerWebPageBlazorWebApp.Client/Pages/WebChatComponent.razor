@@ -1,20 +1,34 @@
 ﻿@page "/webchatClient"
 @rendermode InteractiveWebAssembly
 
-<h3>Web Chat Client</h3>
+<ErrorBoundary>
 
-<h1>Dealer XYZ</h1>
+  <ChildContent>
+    <h3>Web Chat Client</h3>
 
-<PageTitle>Dealer Page ABC</PageTitle>
+    <h1>Dealer XYZ</h1>
 
-@* <div>
-    <label for="dealertoken">Dealer JTW Token:</label>
-    <textarea id="dealertoken" @bind="JWTTokensDTO.DealerJwtToken" style="width: 100%; height: 250px; overflow: auto;"></textarea>
-</div>
-<div>
-    <label for="webchatjwttoken">Webchat Jwt Token token:</label>
-    <textarea id="webchatjwttoken" @bind="JWTTokensDTO.WebchatJwtToken" style="width: 100%; height: 250px; overflow: auto;"></textarea>
-</div> *@
+    <PageTitle>Dealer Page ABC</PageTitle>
+
+    <div>
+      <label for="dealertoken">Dealer JTW Token:</label>
+      <textarea id="dealertoken" @bind="JWTTokensDTO.DealerJwtToken" style="width: 100%; height: 250px; overflow: auto;"></textarea>
+    </div>
+
+    <div>
+      <label for="webchattoken">Webchat JTW Token:</label>
+      <textarea id="webchattoken" @bind="JWTTokensDTO.WebchatJwtToken" style="width: 100%; height: 250px; overflow: auto;"></textarea>
+    </div>
+
+  </ChildContent>
+  <ErrorContent>
+    @context error
+    <p>An error occurred while loading the component.</p>
+    <p>@errorMessage</p>
+    <pre>@errorStackTrace</pre>
+  </ErrorContent>
+
+</ErrorBoundary>
 
 
 

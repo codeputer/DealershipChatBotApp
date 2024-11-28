@@ -13,7 +13,7 @@ builder.AddServiceDefaults();
 builder.Services.AddMemoryCache();
 
 builder.Services.AddSingleton<DealerShipTokenCache>();
-builder.Services.AddScoped<JWTTokensDTO>();
+builder.Services.AddSingleton<JWTTokensDTO>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
