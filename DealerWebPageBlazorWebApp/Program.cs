@@ -1,6 +1,9 @@
 using DealerWebPageBlazorWebApp;
 using DealerWebPageBlazorWebApp.Components;
 
+using DealerWebPageBlazorWebAppShared.DTOModels;
+
+
 //DealerWebPageBlazorWebApp/Program.cs
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +13,7 @@ builder.AddServiceDefaults();
 builder.Services.AddMemoryCache();
 
 builder.Services.AddSingleton<DealerShipTokenCache>();
+builder.Services.AddScoped<JWTTokensDTO>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -63,10 +67,15 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(DealerWebPageBlazorWebApp.Client._Imports).Assembly)
+    .AddAdditionalAssemblies(typeof(DealerWebPageBlazorWebAppClient._Imports).Assembly)
     ;
 
-//will fail if the appsettings.json file is not present
-_ = app.Services.GetRequiredService<AppSettings>();
+////will fail if the appsettings.json file is not present
+//_ = app.Services.GetRequiredService<AppSettings>();
+//var test = app.Services.GetRequiredService<JWTTokensDTO>();
+//#if DEBUG
+//test.DealerJwtToken = "DealerJwtToken";
+//test.WebchatJwtToken = "WebchatJwtToken";
+//#endif
 
 app.Run();

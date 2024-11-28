@@ -1,4 +1,4 @@
-﻿namespace DealerWebPageBlazorWebApp.Components.Resources;
+﻿namespace DealerWebPageBlazorWebAppShared.Resources;
 
 public static class TokenTypes
 {

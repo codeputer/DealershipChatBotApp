@@ -32,11 +32,19 @@ public class TokenHelper
 
     JwtSecurityTokenHandler jwtSecurityTokenHandler = new();
 
+    var expirationDateTime = DateTime.Now.AddMinutes(_appSettings.DealershipChatBotConfiguration.TokenExpirationTimeSpan.TotalMinutes);
+    if (tokenType == "DealershipToken")
+    {
+      //a dealership will as for a WebChatToken, which will have a specied time period
+      //dealership tokens will have a longer expiration time, as we pass then as a javascript snippet to open a webchat
+      expirationDateTime = DateTime.MaxValue;
+    }
+    
     var token = new JwtSecurityToken(
         issuer: _appSettings.DealershipChatBotConfiguration.HostURL,
         audience: _appSettings.DealershipChatBotConfiguration.AudienceURL,
         claims: claims,
-        expires: DateTime.Now.AddMinutes(_appSettings.DealershipChatBotConfiguration.TokenExpirationTimeSpan.TotalMinutes),
+        expires: expirationDateTime,
         signingCredentials: signingCredentials);
 
     var jwtTokenString = jwtSecurityTokenHandler.WriteToken(token);

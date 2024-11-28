@@ -129,6 +129,10 @@ app.MapGet("/api/DecryptToken", ([FromQuery] string encryptedToken, [FromService
 
 });
 
+app.MapGet("/api/GetWebTokenAPI", ([FromServices] TokenHelper tokenHelper) =>
+{
+
+});
 //app.MapPost("/refresh-token", async (HttpContext context) =>
 //{
 //  var refreshToken = context.Request.Headers["Refresh-Token"].ToString();
@@ -158,9 +162,9 @@ app.MapPost("/api/messages", async (IBotFrameworkHttpAdapter adapter, IBot bot, 
     var dealershipId = request.HttpContext.User.FindFirst("dealershipId")?.Value;
     var tokenType = request.HttpContext.User.FindFirst("tokenType")?.Value;
     if (dealershipId == null)
-    { 
+    {
       logger.LogError("dealershipId is missing from the token claims");
-      request.HttpContext.Response.StatusCode = 401; return; 
+      request.HttpContext.Response.StatusCode = 401; return;
     }
     if (tokenType == null)
     {
@@ -175,6 +179,7 @@ app.MapPost("/api/messages", async (IBotFrameworkHttpAdapter adapter, IBot bot, 
   {
     request.HttpContext.Response.StatusCode = 401;
   }
-});
+})
+.RequireAuthorization();
 
 app.Run();

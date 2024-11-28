@@ -1,8 +1,9 @@
-﻿using DealerWebPageBlazorWebApp.Components.Resources;
-
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.WebUtilities;
 
 using System.Net.Http;
+using DealerWebPageBlazorWebAppShared.DTOModels;
+using DealerWebPageBlazorWebAppShared.Resources;
 
 namespace DealerWebPageBlazorWebApp.Components.Pages;
 
@@ -16,6 +17,9 @@ public partial class JwtTokenManagement
 
   [Inject]
   public required DealerShipTokenCache DealerShipTokenCache { get; init; }
+
+  [Inject]
+  public required JWTTokensDTO JWTTokensDTO { get; set; }
 
   private string dealershipId = string.Empty;
   private string jwtEncryptedBase64EncodedPanel = string.Empty;
@@ -32,6 +36,19 @@ public partial class JwtTokenManagement
     DealerShipTokenCache.SetToken(dealershipId, tokenType, newJWTToken);
 
     jwtEncryptedBase64EncodedPanel = newJWTToken;
+    ShareStateForWebAssembly();
+  }
+
+  private void ShareStateForWebAssembly()
+  {
+    if (tokenType == TokenTypes.WebChatToken)
+    {
+      JWTTokensDTO.WebchatJwtToken = jwtEncryptedBase64EncodedPanel;
+    }
+    else if (tokenType == TokenTypes.DealershipToken)
+    {
+      JWTTokensDTO.DealerJwtToken = jwtEncryptedBase64EncodedPanel;
+    }
   }
 
   public void UseCachedToken()
@@ -40,6 +57,7 @@ public partial class JwtTokenManagement
     this.decryptedTokenPanel = string.Empty;
 
     jwtEncryptedBase64EncodedPanel = GetCachedJwtToken();
+    ShareStateForWebAssembly();
   }
 
   private string GetCachedJwtToken()
@@ -47,7 +65,7 @@ public partial class JwtTokenManagement
     if (string.IsNullOrEmpty(dealershipId))
     {
       return "No dealership id provided.";
-    } 
+    }
 
     if (string.IsNullOrEmpty(tokenType))
     {
@@ -59,16 +77,17 @@ public partial class JwtTokenManagement
 
   private async Task<string> GetNewJwtToken()
   {
-    var uriBuilder = new UriBuilder($"{AppSettings.ChatbotServiceConfiguration.ChatbotServiceUrl}/api/GenerateToken");
-    var query = System.Web.HttpUtility.ParseQueryString(uriBuilder.Query);
-    query["dealershipId"] = dealershipId;
-    query["tokenType"] = tokenType;
-    uriBuilder.Query = query.ToString();
-    var url = uriBuilder.ToString();
+    var endpoint = "/api/GenerateToken";
+    IDictionary<string, string?> queryParams = new Dictionary<string, string?>
+        {
+            { "dealershipId", dealershipId },
+            { "tokenType", tokenType }
+        };
+    var urlWithQueryString = QueryHelpers.AddQueryString(endpoint, queryParams);
 
-    var httpClient = httpClientFactory.CreateClient();
-    var response = await httpClient.GetAsync(url);
-    var jwtToken = string.Empty;  
+    var dealershipChatBotHttpClient = httpClientFactory.CreateClient("DealerWebPageBlazorWebApp.DealershipChatBot");
+    var response = await dealershipChatBotHttpClient.GetAsync(urlWithQueryString);
+    var jwtToken = string.Empty;
     if (response.IsSuccessStatusCode)
     {
       jwtToken = await response.Content.ReadAsStringAsync();
@@ -91,14 +110,15 @@ public partial class JwtTokenManagement
       return;
     }
 
-    var uriBuilder = new UriBuilder($"{AppSettings.ChatbotServiceConfiguration.ChatbotServiceUrl}/api/DecryptToken");
-    var query = System.Web.HttpUtility.ParseQueryString(uriBuilder.Query);
-    query["encryptedToken"] = jwtEncryptedBase64EncodedPanel;
-    uriBuilder.Query = query.ToString();
-    var url = uriBuilder.ToString();
+    var endpoint = "/api/DecryptToken";
+    IDictionary<string, string?> queryParams = new Dictionary<string, string?>
+        {
+            { "encryptedToken", jwtEncryptedBase64EncodedPanel }
+        };
+    var urlWithQueryString = QueryHelpers.AddQueryString(endpoint, queryParams);
 
-    var httpDecryptJWTTokenClient = httpClientFactory.CreateClient();
-    var response = await httpDecryptJWTTokenClient.GetAsync(url);
+    var httpDecryptJWTTokenClient = httpClientFactory.CreateClient("DealerWebPageBlazorWebApp.DealershipChatBot");
+    var response = await httpDecryptJWTTokenClient.GetAsync(urlWithQueryString);
     if (response.IsSuccessStatusCode)
     {
       var responseContent = await response.Content.ReadAsStringAsync();
