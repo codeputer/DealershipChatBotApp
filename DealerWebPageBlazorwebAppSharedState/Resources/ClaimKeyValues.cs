@@ -1,5 +1,5 @@
 ﻿namespace DealerWebPageBlazorWebAppShared.Resources;
-public enum JWTTokenClaimNameValues
+public enum ClaimKeyValues
 {
   TokenType,
   DealershipId,

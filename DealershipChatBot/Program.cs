@@ -11,16 +11,18 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IBotFrameworkHttpAdapter, CloudAdapter>();
 builder.Services.AddSingleton<DealershipChatBot.AppSettings>();
 builder.Services.AddSingleton<MinimalAPIRouteManager>();
+builder.Services.AddSingleton<TokenHelper>();
 
-builder.Services.AddScoped<TokenHelper>();
+
 
 builder.Services.AddTransient<IBot, DealershipBot>();
-builder.Services.AddTransient<DealershipChatBot.APIRouteHandlers.VersionAPIRouteHandler>();
-builder.Services.AddTransient<DealershipChatBot.APIRouteHandlers.WebchatMessagesAPIRouteHandler>();
-builder.Services.AddTransient<DealershipChatBot.APIRouteHandlers.GenerateTokenAPIRouteHandler>();
-builder.Services.AddTransient<DealershipChatBot.APIRouteHandlers.DecryptTokenAPIRouteHandler>();
-builder.Services.AddTransient<DealershipChatBot.APIRouteHandlers.GetWebChatArtifactsAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.VersionAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.WebchatMessagesAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.GenerateTokenAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.DecryptTokenAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.GetWebChatArtifactsAPIRouteHandler>();
 
+builder.Services.AddTransient<DealerShipTokenCache>();
 
 //get the configuration of the application
 var appSettings = new DealershipChatBot.AppSettings(builder.Configuration);
@@ -33,7 +35,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
       var encryptionCredentials = tokenHelper.GetEncryptingCredentials();
 
       options.TokenValidationParameters = tokenHelper.GetTokenValidationParameters();
-      
+
       options.Events = new JwtBearerEvents
       {
         OnAuthenticationFailed = context =>
@@ -80,7 +82,7 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 var minimalAPIRouteManager = app.Services.GetRequiredService<MinimalAPIRouteManager>();
-minimalAPIRouteManager.RegisterRoutes(app);  
+minimalAPIRouteManager.RegisterRoutes(app);
 
 app.MapDefaultEndpoints();
 

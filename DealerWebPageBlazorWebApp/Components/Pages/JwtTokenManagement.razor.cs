@@ -5,6 +5,7 @@ using System.Net.Http;
 using DealerWebPageBlazorWebAppShared.DTOModels;
 using DealerWebPageBlazorWebAppShared.Resources;
 using DealerWebPageBlazorWebAppShared.Configuration;
+using System.Security.Claims;
 
 namespace DealerWebPageBlazorWebApp.Components.Pages;
 
@@ -24,7 +25,7 @@ public partial class JwtTokenManagement
 
   private string dealershipId = string.Empty;
   private string jwtEncryptedBase64EncodedPanel = string.Empty;
-  private string tokenType = TokenTypeValues.WebChatToken.ToString();
+  private TokenTypeValues defaultTokenTypeValue = TokenTypeValues.DealershipToken;
   private string decryptedTokenPanel = string.Empty;
 
   public async Task CreateNewToken()
@@ -36,23 +37,12 @@ public partial class JwtTokenManagement
 
     var newJWTToken = await GetNewJwtToken();
 
-    DealerShipTokenCache.SetToken(dealershipId, tokenType, newJWTToken);
+    DealerShipTokenCache.SetToken(dealershipId, defaultTokenTypeValue, newJWTToken);
 
     jwtEncryptedBase64EncodedPanel = newJWTToken;
-    ShareStateForWebAssembly();
+    
   }
-
-  private void ShareStateForWebAssembly()
-  {
-    if (tokenType == TokenTypeValues.WebChatToken.ToString())
-    {
-      JWTTokensDTO.WebchatJwtToken = jwtEncryptedBase64EncodedPanel;
-    }
-    else if (tokenType == TokenTypeValues.DealershipToken.ToString())
-    {
-      JWTTokensDTO.DealerJwtToken = jwtEncryptedBase64EncodedPanel;
-    }
-  }
+  
 
   /// <summary>
   /// Validates that we have a DealerID, and if so, we reset the UX and process
@@ -73,11 +63,11 @@ public partial class JwtTokenManagement
 
   public void UseCachedToken()
   {
-    if (ValidateDealerIdAndReset())
+    if (ValidateDealerIdAndReset()==false)
       return;
 
     jwtEncryptedBase64EncodedPanel = GetCachedJwtToken();
-    ShareStateForWebAssembly();
+    
   }
 
   private string GetCachedJwtToken()
@@ -87,25 +77,26 @@ public partial class JwtTokenManagement
       return "No dealership id provided.";
     }
 
-    if (string.IsNullOrEmpty(tokenType))
+    if (defaultTokenTypeValue == TokenTypeValues.Unknown)
     {
       return "No token type provided.";
     }
 
-    return DealerShipTokenCache.GetToken(dealershipId, tokenType) ?? $"No token found in cache for Dealership Id:>{dealershipId}< & TokenType:>{tokenType}<";
+    return DealerShipTokenCache.GetToken(dealershipId, defaultTokenTypeValue) ?? $"No token found in cache for Dealership Id:>{dealershipId}< & TokenType:>{defaultTokenTypeValue}<";
   }
 
   private async Task<string> GetNewJwtToken()
   {
-    var endpoint = APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GenerateToken);  
+    var generateTokenHostUrl = APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GenerateToken);  
+
     IDictionary<string, string?> queryParams = new Dictionary<string, string?>
         {
-            { "dealershipId", dealershipId },
-            { "tokenType", tokenType }
+            { ClaimKeyValues.DealershipId.ToString(), dealershipId },
+            { ClaimKeyValues.TokenType.ToString(), defaultTokenTypeValue.ToString() }
         };
-    var urlWithQueryString = QueryHelpers.AddQueryString(endpoint, queryParams);
+    var urlWithQueryString = QueryHelpers.AddQueryString(generateTokenHostUrl, queryParams);
 
-    var dealershipChatBotHttpClient = httpClientFactory.CreateClient("DealerWebPageBlazorWebApp.DealershipChatBot");
+    var dealershipChatBotHttpClient = httpClientFactory.GetNamedHttpClient(HttpNamedClients.DealershipChatBot);  
     var response = await dealershipChatBotHttpClient.GetAsync(urlWithQueryString);
     var jwtToken = string.Empty;
     if (response.IsSuccessStatusCode)

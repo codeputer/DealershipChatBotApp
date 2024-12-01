@@ -1,0 +1,2 @@
+﻿global using DealerWebPageBlazorWebApp.Resources;
+global using DealerWebPageBlazorWebApp.Extensions;

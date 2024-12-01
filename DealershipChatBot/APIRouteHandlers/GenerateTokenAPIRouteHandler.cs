@@ -4,8 +4,9 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace DealershipChatBot.APIRouteHandlers;
 
-public class GenerateTokenAPIRouteHandler : IRouteHandlerDelegate<IResult>
+public class GenerateTokenAPIRouteHandler (DealerShipTokenCache dealerShipTokenCache) : IRouteHandlerDelegate<IResult>
 {
+  private readonly DealerShipTokenCache _DealershipTokenCache = dealerShipTokenCache;
   public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.GenerateToken.ToString();
   public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GenerateToken);
   public Delegate DelegateHandler => GenerateTokenDelegate;
@@ -61,7 +62,7 @@ public class GenerateTokenAPIRouteHandler : IRouteHandlerDelegate<IResult>
     var base64JWTEncryptedToken = TokenHelper.Base64Encode(encryptedJWTToken);
 
     //simulates persistence
-    memoryCache.Set(dealershipId, base64JWTEncryptedToken);
+    _DealershipTokenCache.SetToken(dealershipId, tokenType, base64JWTEncryptedToken);
 
     return Results.Ok(base64JWTEncryptedToken);
   }

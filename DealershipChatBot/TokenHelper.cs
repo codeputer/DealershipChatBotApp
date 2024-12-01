@@ -219,10 +219,10 @@ public class TokenHelper
   {
     return
       [
-        new Claim(JWTTokenClaimNameValues.DealershipId.ToString(), dealershipId),
-        new Claim(JWTTokenClaimNameValues.DealerName.ToString(), dealerName),
-        new Claim(JWTTokenClaimNameValues.TokenType.ToString(), tokenTypeValue.ToString()),
-        new Claim(JWTTokenClaimNameValues.ClientIPAddress.ToString(), clientIPAddress)
+        new Claim(ClaimKeyValues.DealershipId.ToString(), dealershipId),
+        new Claim(ClaimKeyValues.DealerName.ToString(), dealerName),
+        new Claim(ClaimKeyValues.TokenType.ToString(), tokenTypeValue.ToString()),
+        new Claim(ClaimKeyValues.ClientIPAddress.ToString(), clientIPAddress)
       ];
   }
 

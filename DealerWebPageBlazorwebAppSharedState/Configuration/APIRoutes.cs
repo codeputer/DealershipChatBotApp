@@ -15,12 +15,12 @@ public static class APIRoutes
   {
     var routeURL = dealershipChatBotApiRoute switch
     {
-      APIRoutes.DealershipChatBotAPIRoutes.Version => string.Concat("/", APIRoutes.DealershipChatBotAPIRoutes.Version.ToString()),
+      APIRoutes.DealershipChatBotAPIRoutes.Version => string.Concat("/", APIRoutes.DealershipChatBotAPIRoutes.Version),
       APIRoutes.DealershipChatBotAPIRoutes.GenerateToken => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.GenerateToken),
-      APIRoutes.DealershipChatBotAPIRoutes.DecryptToken => string.Concat("/api", APIRoutes.DealershipChatBotAPIRoutes.DecryptToken),
-      APIRoutes.DealershipChatBotAPIRoutes.GetWebTokenAPI => string.Concat("/api", APIRoutes.DealershipChatBotAPIRoutes.GetWebTokenAPI),
-      APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts => string.Concat("api/", APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts),
-
+      APIRoutes.DealershipChatBotAPIRoutes.DecryptToken => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.DecryptToken),
+      APIRoutes.DealershipChatBotAPIRoutes.GetWebTokenAPI => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.GetWebTokenAPI),
+      APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts),
+      APIRoutes.DealershipChatBotAPIRoutes.WebChatMessages => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.WebChatMessages),
       _ => "N/A",
     };
 

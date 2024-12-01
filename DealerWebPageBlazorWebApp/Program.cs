@@ -1,8 +1,10 @@
-using DealerWebPageBlazorWebApp;
 using DealerWebPageBlazorWebApp.Components;
 
 using DealerWebPageBlazorWebAppShared.Configuration;
 using DealerWebPageBlazorWebAppShared.DTOModels;
+using DealerWebPageBlazorWebAppShared.Resources;
+
+using Microsoft.Extensions.Http.Logging;
 
 
 //DealerWebPageBlazorWebApp/Program.cs
@@ -24,7 +26,7 @@ builder.Services.AddRazorComponents()
 #if DEBUG
 // added this to allow for longer timeout for debugging
 //todo: note that this is not working! Aspire is still creating a client with a 30 second timeout.
-builder.Services.AddHttpClient("DefaultClient", client =>
+builder.Services.AddHttpClient(HttpNamedClients.DefaultClient.ToString(), client =>
 {
   client.Timeout = TimeSpan.FromMinutes(5); // Set the timeout to 5 minutes or any desired duration
 });
@@ -34,7 +36,7 @@ builder.Services.AddSingleton<AppSettings>();
 
 var appSettings = new AppSettings(builder.Configuration);
 
-builder.Services.AddHttpClient("DealerWebPageBlazorWebApp.DealershipChatBot", client =>
+builder.Services.AddHttpClient(HttpNamedClients.DealershipChatBot.ToString(), client =>
 {
   client.BaseAddress = new Uri(appSettings.ChatbotServiceConfiguration.ChatbotServiceUrl);
 #if DEBUG
