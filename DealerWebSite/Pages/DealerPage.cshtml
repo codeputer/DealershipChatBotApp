@@ -1,11 +1,7 @@
 ﻿@page
+@model DealerWebSite.Pages.DealerPageModel;
 
-@model DealerPageModel
-@{
-  ViewData["Title"] = "Dealer Page";
-}
-
-<h1>Welcome to @Model.DealerName</h1>
+<h1>Welcome to |@Model.DealerName}</h1>
 <p>Ask your questions in the chat below:</p>
 
 <!-- Placeholder for the webchat -->
@@ -23,7 +19,7 @@
           return;
       }
 
-      const webChatHost = $'https://@Model.WebchatMessagesAPI';
+      const webChatHost = '{@Model.WebchatDealerRequest}';
 
       function loadWebChat() {
           fetch(webChatHost, {

@@ -1,4 +1,4 @@
-﻿namespace DealerWebPageBlazorWebApp.Extensions;
+﻿namespace DealerWebPageBlazorWebAppShared.Extensions;
 
 public static class HttpNamedClientsExtension
 {

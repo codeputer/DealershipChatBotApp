@@ -1,8 +1,12 @@
-using DealerWebPageBlazorWebAppShared.Configuration;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+var appSettings = new AppSettings(builder.Configuration); 
+builder.Services.AddHttpClient(HttpNamedClients.DealershipChatBot.ToString(), client =>
+{
+  client.BaseAddress = new Uri(appSettings.ChatbotServiceConfiguration.ChatbotServiceUrl);
+});
 
 // Add services to the container.
 builder.Services.AddRazorPages();

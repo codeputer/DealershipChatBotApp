@@ -1,4 +1,4 @@
-﻿namespace DealerWebPageBlazorWebApp.Resources;
+﻿namespace DealerWebPageBlazorWebAppShared.Resources;
 
 public enum HttpNamedClients
 {

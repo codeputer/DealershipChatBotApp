@@ -1,13 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.WebUtilities;
-
-using System.Net.Http;
-using DealerWebPageBlazorWebAppShared.DTOModels;
-using DealerWebPageBlazorWebAppShared.Resources;
-using DealerWebPageBlazorWebAppShared.Configuration;
-using System.Security.Claims;
-
-namespace DealerWebPageBlazorWebApp.Components.Pages;
+﻿namespace DealerWebPageBlazorWebApp.Components.Pages;
 
 public partial class JwtTokenManagement
 {
@@ -96,7 +87,7 @@ public partial class JwtTokenManagement
         };
     var urlWithQueryString = QueryHelpers.AddQueryString(generateTokenHostUrl, queryParams);
 
-    var dealershipChatBotHttpClient = httpClientFactory.GetNamedHttpClient(HttpNamedClients.DealershipChatBot);  
+    var dealershipChatBotHttpClient = httpClientFactory.GetNamedHttpClient(HttpNamedClients.DealershipChatBot);
     var response = await dealershipChatBotHttpClient.GetAsync(urlWithQueryString);
     var jwtToken = string.Empty;
     if (response.IsSuccessStatusCode)
