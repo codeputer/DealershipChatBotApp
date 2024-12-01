@@ -8,14 +8,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DealershipChatBotAppAspire.ServiceDefaults\DealershipChatBotAppAspire.ServiceDefaults.csproj" />
-    <ProjectReference Include="..\DealerWebPageBlazorWebApp.Client\DealerWebPageBlazorWebAppClient.csproj" />
     <ProjectReference Include="..\DealerWebPageBlazorwebAppSharedState\DealerWebPageBlazorWebAppShared.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Update="wwwroot\images\favicon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 

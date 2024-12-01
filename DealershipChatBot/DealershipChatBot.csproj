@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DealershipChatBotAppAspire.ServiceDefaults\DealershipChatBotAppAspire.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\DealerWebPageBlazorwebAppSharedState\DealerWebPageBlazorWebAppShared.csproj" />
   </ItemGroup>
 
 </Project>

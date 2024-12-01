@@ -1,0 +1,66 @@
+﻿@page
+
+@model DealerPageModel
+@{
+  ViewData["Title"] = "Dealer Page";
+}
+
+<h1>Welcome to @Model.DealerName</h1>
+<p>Ask your questions in the chat below:</p>
+
+<!-- Placeholder for the webchat -->
+<div id="webchat-placeholder"></div>
+
+<!-- Script to load the webchat -->
+<script>
+  (function() {
+      // Extract JWT token from the URL query string
+      const urlParams = new URLSearchParams(window.location.search);
+      const encryptedJwt = urlParams.get('jwt');
+
+      if (encryptedJwt==false) {
+          console.error('JWT token is missing in the URL.');
+          return;
+      }
+
+      const webChatHost = $'https://@Model.WebchatMessagesAPI';
+
+      function loadWebChat() {
+          fetch(webChatHost, {
+              method: 'GET',
+              headers: {
+                  Authorization: `Bearer ${encryptedJwt}`
+              }
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Failed to load WebChat artifacts');
+              }
+              return response.json();
+          })
+          .then(data => {
+              // Inject HTML into the placeholder
+              const placeholder = document.getElementById('webchat-placeholder');
+              placeholder.innerHTML = data.html;
+
+              // Inject JavaScript
+              const script = document.createElement('script');
+              script.textContent = data.javascript;
+              document.body.appendChild(script);
+
+              // Inject CSS (if provided)
+              if (data.css) {
+                  const style = document.createElement('style');
+                  style.textContent = data.css;
+                  document.head.appendChild(style);
+              }
+          })
+          .catch(error => {
+              console.error('Error loading WebChat:', error);
+          });
+      }
+
+      // Load the WebChat when the page is ready
+      document.addEventListener('DOMContentLoaded', loadWebChat);
+  })();
+</script>

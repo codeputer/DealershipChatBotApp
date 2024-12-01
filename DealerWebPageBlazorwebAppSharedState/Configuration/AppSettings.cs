@@ -1,13 +1,11 @@
-﻿using DealerWebPageBlazorWebApp.Configuration;
-
-namespace DealerWebPageBlazorWebApp;
+﻿namespace DealerWebPageBlazorWebAppShared.Configuration;
 
 
 public class AppSettings
 {
   public AppSettings(IConfiguration configuration)
   {
-    this.ChatbotServiceConfiguration = configuration.GetSection(nameof(ChatbotServiceConfiguration)).Get<ChatbotServiceConfiguration>()
+    ChatbotServiceConfiguration = configuration.GetSection(nameof(ChatbotServiceConfiguration)).Get<ChatbotServiceConfiguration>()
       ?? throw new ArgumentNullException(nameof(configuration));
   }
 

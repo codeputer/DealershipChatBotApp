@@ -1,32 +1,41 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-const string DealershipChatBot = "DealershipChatBot";
+const string DealershipChatBotAPI = "DealershipChatBot";
 const string DealerWebPageBlazorWebApp = "DealerWebPageBlazorWebApp";
 const string DealerWebPageBlazorWebAppClient = "DealerWebPageBlazorWebAppClient";
+const string DealerWebSite = "DealerWebSite"; 
 
 //chat bot is the backend service with the capability to generate tokens as well as conducts the chat
-var dealershipChatBotService = builder.AddProject<Projects.DealershipChatBot>(DealershipChatBot)
+var dealershipChatBotServiceAPI = builder.AddProject<Projects.DealershipChatBot>(DealershipChatBotAPI)
   .WithExternalHttpEndpoints()
   ;
 
 //var launchProfileName = ShouldUseHttpForEndpoints() ? "http" : "https";
 var launchProfileName = "https";
 
-var chatbotService_Endpoint = dealershipChatBotService.GetEndpoint(launchProfileName);
+var chatbotService_Endpoint = dealershipChatBotServiceAPI.GetEndpoint(launchProfileName);
 
 //dealer site needs to know about where the chat bot is
 var dealerWebPageBlazorWebAppService = builder.AddProject<Projects.DealerWebPageBlazorWebApp>(DealerWebPageBlazorWebApp)
+  .WithReference(dealershipChatBotServiceAPI)
   .WithEnvironment("ChatbotServiceConfiguration__chatbotServiceUrl", chatbotService_Endpoint)
-  .WaitFor(dealershipChatBotService)
+  .WaitFor(dealershipChatBotServiceAPI)
   ;
 
 var dealerWebPageBlazorWebApp_endpoint = dealerWebPageBlazorWebAppService.GetEndpoint(launchProfileName);
 
-//chat bot needs to know about itself, as well as the audience
-dealershipChatBotService
+//use environmental settings (which are read by configuration manager) to pass the chatbot service url to the client
+dealershipChatBotServiceAPI
   .WithEnvironment("DealershipChatBotConfiguration__HostURL", chatbotService_Endpoint)
   .WithEnvironment("DealershipChatBotConfiguration__AudienceURL", dealerWebPageBlazorWebApp_endpoint)
   ;
+
+//var dealerWebPageBlazorWebApp_Client = builder.AddProject<Projects.DealerWebPageBlazorWebAppClient>(DealerWebPageBlazorWebAppClient)
+//  .WithEnvironment("DealershipChatBotConfiguration__HostURL", chatbotService_Endpoint)
+//  .WithEnvironment("DealershipChatBotConfiguration__AudienceURL", dealerWebPageBlazorWebApp_endpoint);
+
+builder.AddProject<Projects.DealerWebSite>(DealerWebSite)
+  .WithEnvironment("ChatbotServiceConfiguration__chatbotServiceUrl", chatbotService_Endpoint);
 
 //var dealerWebPageBlazorWebApp_Client = builder.AddProject<Projects.DealerWebPageBlazorWebAppClient>(DealerWebPageBlazorWebAppClient)
 //  .WithEnvironment("DealershipChatBotConfiguration__HostURL", chatbotService_Endpoint)

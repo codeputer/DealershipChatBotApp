@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using DealerWebPageBlazorWebAppShared.Resources;
 
 public class TokenHelper
 {
@@ -20,54 +21,53 @@ public class TokenHelper
   /// <summary>
   /// Generates a signed JWT token.
   /// </summary>
-  public string GenerateJWTToken(string dealershipId, string tokenType)
+  public string GenerateJWTToken(IEnumerable<Claim> claims)
   {
-    var claims = new[]
-    {
-            new Claim("dealershipId", dealershipId),
-            new Claim("tokenType", tokenType)
-     };
+    if (claims.Any() == false)
+      throw new Exception("Claims for the Token must be specified");
 
     var signingCredentials = GetTokenSigningCredentials();
 
     JwtSecurityTokenHandler jwtSecurityTokenHandler = new();
 
+    var tokenTypeAsString = claims.FirstOrDefault(c => c.Type == "tokenType")?.Value ?? TokenTypeValues.Unknown.ToString();
+    var tokenType = Enum.Parse<TokenTypeValues>(tokenTypeAsString);
+
     var expirationDateTime = DateTime.Now.AddMinutes(_appSettings.DealershipChatBotConfiguration.TokenExpirationTimeSpan.TotalMinutes);
-    if (tokenType == "DealershipToken")
+    if (tokenType == TokenTypeValues.DealershipToken)
     {
-      //a dealership will as for a WebChatToken, which will have a specied time period
-      //dealership tokens will have a longer expiration time, as we pass then as a javascript snippet to open a webchat
       expirationDateTime = DateTime.MaxValue;
     }
-    
-    var token = new JwtSecurityToken(
+
+    var jwtToken = new JwtSecurityToken(
         issuer: _appSettings.DealershipChatBotConfiguration.HostURL,
         audience: _appSettings.DealershipChatBotConfiguration.AudienceURL,
         claims: claims,
         expires: expirationDateTime,
         signingCredentials: signingCredentials);
 
-    var jwtTokenString = jwtSecurityTokenHandler.WriteToken(token);
+    var jwtTokenString = jwtSecurityTokenHandler.WriteToken(jwtToken);
 
+    //an assertion that after creation it can be read - may be unnecessary
     var canReadJwtTokenString = jwtSecurityTokenHandler.CanReadToken(jwtTokenString);
     if (canReadJwtTokenString == false)
     {
       throw new Exception("Token cannot be read");
     }
 
-    //todo: not sure how this can return a false, as it is passed anything during instantiation
+    //todo: more research on this property
     var validToken = jwtSecurityTokenHandler.CanValidateToken;
     if (validToken == false)
     {
       throw new Exception("Token cannot be validated");
     }
 
-    //an assertion that the token can be validated before a round trip of the token occurs, and before its encrypted
+    //an assertion that the token will validate against the Validation tests
     var jwtTokenValidationParameters = GetTokenValidationParameters();
 
     var principal = jwtSecurityTokenHandler.ValidateToken(jwtTokenString, jwtTokenValidationParameters, out SecurityToken validatedToken);
 
-    return jwtSecurityTokenHandler.WriteToken(token);
+    return jwtSecurityTokenHandler.WriteToken(jwtToken);
   }
 
   internal SigningCredentials GetTokenSigningCredentials()
@@ -131,7 +131,7 @@ public class TokenHelper
 
     var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
 
-    if (jwtSecurityTokenHandler.CanReadToken(encryptedAsciiToken)==false)
+    if (jwtSecurityTokenHandler.CanReadToken(encryptedAsciiToken) == false)
     {
       throw new ArgumentException("Invalid encrypted JWT format", nameof(encryptedAsciiToken));
     }
@@ -141,7 +141,7 @@ public class TokenHelper
 
     try
     {
-      var principal = jwtSecurityTokenHandler.ValidateToken(encryptedAsciiToken, validationParameters, out SecurityToken validatedToken);
+      var claimPrinciple = jwtSecurityTokenHandler.ValidateToken(encryptedAsciiToken, validationParameters, out SecurityToken validatedToken);
 
       if (validatedToken is not JwtSecurityToken jwtToken ||
           !jwtToken.Header.Alg.Equals(SecurityAlgorithms.Aes256KW, StringComparison.OrdinalIgnoreCase) ||
@@ -151,7 +151,7 @@ public class TokenHelper
         throw new SecurityTokenException("Invalid token algorithms in header");
       }
 
-      return principal;
+      return claimPrinciple;
     }
     catch (SecurityTokenException ex)
     {
@@ -213,5 +213,30 @@ public class TokenHelper
   {
     var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
     return Convert.ToBase64String(plainTextBytes);
+  }
+
+  public IEnumerable<Claim> GenerateClaims(TokenTypeValues tokenTypeValue, string dealershipId, string dealerName, string clientIPAddress)
+  {
+    return
+      [
+        new Claim(JWTTokenClaimNameValues.DealershipId.ToString(), dealershipId),
+        new Claim(JWTTokenClaimNameValues.DealerName.ToString(), dealerName),
+        new Claim(JWTTokenClaimNameValues.TokenType.ToString(), tokenTypeValue.ToString()),
+        new Claim(JWTTokenClaimNameValues.ClientIPAddress.ToString(), clientIPAddress)
+      ];
+  }
+
+  public string? GetClaimValue(ClaimsPrincipal user, string claimName)
+  {
+    return GetClaimValueHelper(user, claimName);
+  } 
+
+  public static string? GetClaimValueHelper(ClaimsPrincipal user, string claimName)
+  {
+    // Find the first claim with the specified name
+    var claim = user?.FindFirst(claimName);
+
+    // Return the claim's value or null if not found
+    return claim?.Value;
   }
 }

@@ -1,4 +1,4 @@
-﻿namespace DealerWebPageBlazorWebAppClient;
+﻿namespace DealerWebPageBlazorWebAppClient.ServerLogging;
 
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +11,7 @@ public class ServerLoggingProvider : ILoggerProvider
 {
   private readonly Func<IServiceProvider, HttpClient> _httpClientFactory;
 
-  public ServerLoggingProvider(Func<IServiceProvider, HttpClient> httpClientFactory)
+  public ServerLoggingProvider(Func<IServiceProvider, HttpClient> httpClientFactory, AppSettings appSettings)
   {
     _httpClientFactory = httpClientFactory;
   }

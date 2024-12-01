@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using System.Net.Http;
 using DealerWebPageBlazorWebAppShared.DTOModels;
 using DealerWebPageBlazorWebAppShared.Resources;
+using DealerWebPageBlazorWebAppShared.Configuration;
 
 namespace DealerWebPageBlazorWebApp.Components.Pages;
 
@@ -23,13 +24,15 @@ public partial class JwtTokenManagement
 
   private string dealershipId = string.Empty;
   private string jwtEncryptedBase64EncodedPanel = string.Empty;
-  private string tokenType = TokenTypes.WebChatToken;
+  private string tokenType = TokenTypeValues.WebChatToken.ToString();
   private string decryptedTokenPanel = string.Empty;
 
   public async Task CreateNewToken()
   {
-    decryptedTokenPanel = string.Empty;
-    jwtEncryptedBase64EncodedPanel = string.Empty;
+    if (ValidateDealerIdAndReset() == false)
+    {
+      return;
+    }
 
     var newJWTToken = await GetNewJwtToken();
 
@@ -41,20 +44,37 @@ public partial class JwtTokenManagement
 
   private void ShareStateForWebAssembly()
   {
-    if (tokenType == TokenTypes.WebChatToken)
+    if (tokenType == TokenTypeValues.WebChatToken.ToString())
     {
       JWTTokensDTO.WebchatJwtToken = jwtEncryptedBase64EncodedPanel;
     }
-    else if (tokenType == TokenTypes.DealershipToken)
+    else if (tokenType == TokenTypeValues.DealershipToken.ToString())
     {
       JWTTokensDTO.DealerJwtToken = jwtEncryptedBase64EncodedPanel;
     }
   }
 
-  public void UseCachedToken()
+  /// <summary>
+  /// Validates that we have a DealerID, and if so, we reset the UX and process
+  /// </summary>
+  /// <returns></returns>
+  public bool ValidateDealerIdAndReset()
   {
+    if (string.IsNullOrEmpty(dealershipId))
+    {
+      decryptedTokenPanel = "No dealership id provided.";
+      return false;
+    }
+
     this.jwtEncryptedBase64EncodedPanel = string.Empty;
     this.decryptedTokenPanel = string.Empty;
+    return true;
+  }
+
+  public void UseCachedToken()
+  {
+    if (ValidateDealerIdAndReset())
+      return;
 
     jwtEncryptedBase64EncodedPanel = GetCachedJwtToken();
     ShareStateForWebAssembly();
@@ -77,7 +97,7 @@ public partial class JwtTokenManagement
 
   private async Task<string> GetNewJwtToken()
   {
-    var endpoint = "/api/GenerateToken";
+    var endpoint = APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GenerateToken);  
     IDictionary<string, string?> queryParams = new Dictionary<string, string?>
         {
             { "dealershipId", dealershipId },

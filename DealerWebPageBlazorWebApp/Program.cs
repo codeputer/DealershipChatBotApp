@@ -1,6 +1,7 @@
 using DealerWebPageBlazorWebApp;
 using DealerWebPageBlazorWebApp.Components;
 
+using DealerWebPageBlazorWebAppShared.Configuration;
 using DealerWebPageBlazorWebAppShared.DTOModels;
 
 
@@ -66,8 +67,8 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(DealerWebPageBlazorWebAppClient._Imports).Assembly)
+    //.AddInteractiveWebAssemblyRenderMode()
+    //.AddAdditionalAssemblies(typeof(DealerWebPageBlazorWebAppClient._Imports).Assembly)
     ;
 
 ////will fail if the appsettings.json file is not present

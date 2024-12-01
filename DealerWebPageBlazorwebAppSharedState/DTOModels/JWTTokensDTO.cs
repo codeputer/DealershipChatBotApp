@@ -1,5 +1,4 @@
 ﻿namespace DealerWebPageBlazorWebAppShared.DTOModels;
-//DealerWebPageBlazorWebAppShared.DTOModels.JWTTokensDTO
 
 public class JWTTokensDTO
 {

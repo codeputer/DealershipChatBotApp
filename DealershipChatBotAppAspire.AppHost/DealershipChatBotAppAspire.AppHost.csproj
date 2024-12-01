@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DealershipChatBot\DealershipChatBot.csproj" />
     <ProjectReference Include="..\DealerWebPageBlazorWebApp\DealerWebPageBlazorWebApp.csproj" />
+    <ProjectReference Include="..\DealerWebSite\DealerWebSite.csproj" />
   </ItemGroup>
 
 </Project>

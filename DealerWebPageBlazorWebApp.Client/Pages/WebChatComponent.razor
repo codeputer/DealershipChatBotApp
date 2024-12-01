@@ -1,23 +1,21 @@
 ﻿@page "/webchatClient"
-@rendermode InteractiveWebAssembly
+@rendermode InteractiveAuto
 
 <ErrorBoundary>
 
   <ChildContent>
-    <h3>Web Chat Client</h3>
-
-    <h1>Dealer XYZ</h1>
-
     <PageTitle>Dealer Page ABC</PageTitle>
+    <h3>Web Chat Client</h3>
+    <h2>Render mode:@RendererInfo.Name</h2>
 
     <div>
       <label for="dealertoken">Dealer JTW Token:</label>
-      <textarea id="dealertoken" @bind="JWTTokensDTO.DealerJwtToken" style="width: 100%; height: 250px; overflow: auto;"></textarea>
+      <textarea id="dealertoken" @bind="JWTTokensDTO_Client.DealerJwtToken" style="width: 100%; height: 250px; overflow: auto;"></textarea>
     </div>
 
     <div>
       <label for="webchattoken">Webchat JTW Token:</label>
-      <textarea id="webchattoken" @bind="JWTTokensDTO.WebchatJwtToken" style="width: 100%; height: 250px; overflow: auto;"></textarea>
+      <textarea id="webchattoken" @bind="JWTTokensDTO_Client.WebchatJwtToken" style="width: 100%; height: 250px; overflow: auto;"></textarea>
     </div>
 
   </ChildContent>

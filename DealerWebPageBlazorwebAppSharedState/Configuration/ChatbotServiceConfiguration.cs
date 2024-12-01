@@ -1,4 +1,4 @@
-﻿namespace DealerWebPageBlazorWebApp.Configuration;
+﻿namespace DealerWebPageBlazorWebAppShared.Configuration;
 
 public class ChatbotServiceConfiguration
 {
