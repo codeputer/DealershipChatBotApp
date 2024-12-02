@@ -1,62 +1,114 @@
 ﻿@page
 @model DealerWebSite.Pages.DealerPageModel;
 
-<h1>Welcome to |@Model.DealerName}</h1>
+<h1>Welcome to Dealer Page</h1>
 <p>Ask your questions in the chat below:</p>
 
-<!-- Placeholder for the webchat -->
-<div id="webchat-placeholder"></div>
 
 <!-- Script to load the webchat -->
 <script>
-  (function() {
-      // Extract JWT token from the URL query string
-      const urlParams = new URLSearchParams(window.location.search);
-      const encryptedJwt = urlParams.get('jwt');
 
-      if (encryptedJwt==false) {
-          console.error('JWT token is missing in the URL.');
-          return;
-      }
+  (async function () {
+      console.log("function has started");
+      const dealerJWTToken = "ZXlKaGJHY2lPaUpCTWpVMlMxY2lMQ0psYm1NaU9pSkJNalUyUTBKRExVaFROVEV5SWl3aWRIbHdJam9pU2xkVUlpd2lZM1I1SWpvaVNsZFVJbjAuVWxTWjZNVXk2VnZieXM4SWV0NFNfMV9iMW9sT29xMDhmeTIyRGo2bzAtVjBjak9NUUJTM2JCOGotTGNWb1RWZlFtNE9oeTNPc2hBMDdXVlM0LWF5OWl6ZGZZd0kxQXd6LkhlbFY3Y3FvQmhlMUhUbkdOUGVKOHcuM3ZlSDM4a1BMdEhIUEhBb2FibUFycDhUQ1V6dTBVYWV2WC16S3VTbkg4X210bFIzM2ozdjZtUDBQZzJqdm1ya0RTa2x4bm03V3RPQlNxMUs3M2dPbFVlYkFiUDlVeUh1RU5QMWpGckEwUFYwNnl4QldwaDN3ZHIzMlRxam1MRXBGellnQjF1TW9BSFR1TmxST0MtSkYtdGMxbUZESE5SUlZYREtJMVhLWVRlVktiT2RONXpXNEM3U2dTUXFOZVlpT3I2dFRZOFJBdHA2Q2taWW9hVUpob2gyMGJVNW16RldPUVhSQmlGUFJvMHVtUlVvaV9ZLUVnOFZsR2tvNFY5cDBNMEZvYndidHVsQmwyQXpuOUZiSkREZFducFJpc1RJZmxUMDIxNFRUMGZkdWlkQVAyZjdTdDFfOFVVUkpuMHB3RzdDRDV0enlHdW14TW9hTm0wSUlXTzdZcGQwQnkyWk1ybmIxcFVKQ0lGTGRDTzNSWHM2Z08zRlZ1SmMzM2E1dTEyOWNUdFQ0SWlicng5UFJsUEl4ZUd0eGlBQm01QTctX1RNaE45ZmNUQjEzcFUwaUFPQVNLQVZ2Mjd6ZHFkRDViSHNuS0F6Z0Y4Yi1ZYWstNHFMMXc5NDVoRExKcUJWM3NjaE1DSTJ5S2p1WGR3TlZ2RDZYU3k5YU9DUGEyX0NNV0tITHBfb3Q3amtsSFd5ck0yX1dwWE9na0RqMXZwanJ0d0s4dVpacjkwLldVQkZMNEFnYWFBbHZyNU52bG92OWxhblhNdkp4dzI2MktITThwSG1Dc0E=";
+      const webTokenUrl = "https://localhost:7021/api/GetWebTokenAPI";
+      const chatEndpointUrl = "https://localhost:7021/api/WebChatMessagesAPI";
 
-      const webChatHost = '{@Model.WebchatDealerRequest}';
-
-      function loadWebChat() {
-          fetch(webChatHost, {
+      async function fetchWebToken() {
+          const response = await fetch(webTokenUrl, {
               method: 'GET',
               headers: {
-                  Authorization: `Bearer ${encryptedJwt}`
-              }
-          })
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error('Failed to load WebChat artifacts');
-              }
-              return response.json();
-          })
-          .then(data => {
-              // Inject HTML into the placeholder
-              const placeholder = document.getElementById('webchat-placeholder');
-              placeholder.innerHTML = data.html;
-
-              // Inject JavaScript
-              const script = document.createElement('script');
-              script.textContent = data.javascript;
-              document.body.appendChild(script);
-
-              // Inject CSS (if provided)
-              if (data.css) {
-                  const style = document.createElement('style');
-                  style.textContent = data.css;
-                  document.head.appendChild(style);
-              }
-          })
-          .catch(error => {
-              console.error('Error loading WebChat:', error);
+                  Authorization: `Bearer ${dealerJWTToken}`,
+                  'Content-Type': 'application/json',
+              },
           });
+          if (!response.ok) throw new Error('Failed to fetch WebToken');
+          const data = await response.json();
+          const newToken = data.webToken;
+          localStorage.setItem('webToken', newToken);
+          console.log('Fetched and saved new WebToken:', newToken);
+          return newToken;
       }
 
-      // Load the WebChat when the page is ready
-      document.addEventListener('DOMContentLoaded', loadWebChat);
+      async function getWebToken() {
+          let token = localStorage.getItem('webToken');
+          if (!token) {
+              console.log('No token in storage. Fetching a new one...');
+              token = await fetchWebToken();
+          }
+          return token;
+      }
+
+      async function sendChatData(questions) {
+          let token = await getWebToken();
+          const response = await fetch(chatEndpointUrl, {
+              method: 'POST',
+              headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ questions }),
+          });
+          if (response.status === 401) {
+              console.log('Token expired. Fetching a new one...');
+              token = await fetchWebToken();
+              return sendChatData(questions);
+          }
+          if (!response.ok) throw new Error('Failed to send chat data');
+          return await response.json();
+      }
+
+      // Dynamically inject HTML and CSS for the chat window
+      const chatContainer = document.createElement("div");
+      chatContainer.id = "chatContainer";
+      chatContainer.innerHTML = `
+          <div id="chatWindow" contenteditable="true"></div>
+          <div id="chatLog"></div>
+      `;
+      document.body.appendChild(chatContainer);
+
+      // Add embedded CSS
+      const style = document.createElement("style");
+      style.textContent = `
+          #chatContainer {
+              width: 400px;
+              margin: 20px auto;
+              border: 1px solid #ccc;
+              padding: 10px;
+              font-family: Arial, sans-serif;
+          }
+          #chatWindow {
+              width: 100%;
+              height: 150px;
+              border: 1px solid #ccc;
+              padding: 5px;
+              margin-bottom: 10px;
+          }
+          #chatLog {
+              width: 100%;
+              height: 200px;
+              border: 1px solid #ccc;
+              overflow-y: auto;
+              padding: 5px;
+              background-color: #f9f9f9;
+          }
+      `;
+      document.head.appendChild(style);
+
+
+      const questions = [];
+      document.querySelector('#chatWindow').addEventListener('input', async (e) => {
+          const questionAsked = e.target.value;
+          questions.push({
+              QuestionAsked: questionAsked,
+              QuestionResponse: '',
+          });
+          console.log('Updated Questions array:', questions);
+          const response = await sendChatData(questions);
+          console.log('Chat Response:', response);
+      });
+
+      await getWebToken();
   })();
+
 </script>

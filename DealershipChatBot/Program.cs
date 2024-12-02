@@ -1,12 +1,11 @@
 //DealerShipChatBot/Program.cs
+using DealershipChatBot.APIRouteHandlers;
+
 using DealerWebPageBlazorWebAppShared.Managers;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-
-//temp state persistence for holding issued DealershipChatBot JWT tokens
-builder.Services.AddMemoryCache();
 
 builder.Services.AddSingleton<IBotFrameworkHttpAdapter, CloudAdapter>();
 builder.Services.AddSingleton<DealershipChatBot.AppSettings>();
@@ -16,13 +15,25 @@ builder.Services.AddSingleton<TokenHelper>();
 
 
 builder.Services.AddTransient<IBot, DealershipBot>();
-builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.VersionAPIRouteHandler>();
-builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.WebchatMessagesAPIRouteHandler>();
-builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.GenerateTokenAPIRouteHandler>();
-builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.DecryptTokenAPIRouteHandler>();
-builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DealershipChatBot.APIRouteHandlers.GetWebChatArtifactsAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, VersionAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, WebchatMessagesAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GenerateTokenAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DecryptTokenAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetWebChatArtifactsAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetWebTokenAPIRouteHandler>();
 
 builder.Services.AddTransient<DealerShipTokenCache>();
+
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+  options.AddPolicy("RelaxedCorsPolicy", builder =>
+  {
+    builder.AllowAnyOrigin()
+           .AllowAnyMethod()
+           .AllowAnyHeader();
+  });
+});
 
 //get the configuration of the application
 var appSettings = new DealershipChatBot.AppSettings(builder.Configuration);
@@ -31,15 +42,13 @@ var tokenHelper = new TokenHelper(appSettings);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-      var jwtCredentials = tokenHelper.GetTokenSigningCredentials();
-      var encryptionCredentials = tokenHelper.GetEncryptingCredentials();
-
       options.TokenValidationParameters = tokenHelper.GetTokenValidationParameters();
 
       options.Events = new JwtBearerEvents
       {
         OnAuthenticationFailed = context =>
         {
+          Console.WriteLine("OnAuthenticationFailed: " + context.Exception.Message);
           if (context.Exception is SecurityTokenExpiredException)
           {
             context.Response.Headers.Append("Token-Expired", "true");
@@ -48,17 +57,55 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             // Optionally log the failure or take custom action
             return context.Response.WriteAsync("Token has expired.");
           }
-          context.Response.StatusCode = 401;
-          context.Response.ContentType = "application/json";
-          var result = System.Text.Json.JsonSerializer.Serialize(new { message = "Authentication failed" });
-          return context.Response.WriteAsync(result);
+
+          options.Events = new JwtBearerEvents
+          {
+            OnAuthenticationFailed = context =>
+            {
+              Console.WriteLine("OnAuthenticationFailed: " + context.Exception.Message);
+              if (context.Exception is SecurityTokenExpiredException)
+              {
+                context.Response.Headers.Append("Token-Expired", "true");
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+                // Optionally log the failure or take custom action
+                return context.Response.WriteAsync("Token has expired.");
+              }
+              if (context.Response.HasStarted == false)
+              {
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                var result = System.Text.Json.JsonSerializer.Serialize(new { message = "Authentication failed" });
+                return context.Response.WriteAsync(result);
+              }
+              return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+              Console.WriteLine("OnChallenge: " + context.AuthenticateFailure?.Message);
+              if (context.Response.HasStarted == false)
+              {
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                var result = System.Text.Json.JsonSerializer.Serialize(new { message = "You are not authorized" });
+                return context.Response.WriteAsync(result);
+              }
+              return Task.CompletedTask;
+            }
+          };
+          return Task.CompletedTask;
         },
         OnChallenge = context =>
         {
-          context.Response.StatusCode = 401;
-          context.Response.ContentType = "application/json";
-          var result = System.Text.Json.JsonSerializer.Serialize(new { message = "You are not authorized" });
-          return context.Response.WriteAsync(result);
+          Console.WriteLine("OnChallenge: " + context.AuthenticateFailure?.Message);
+          if (context.Response.HasStarted == false)
+          {
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            var result = System.Text.Json.JsonSerializer.Serialize(new { message = "You are not authorized" });
+            return context.Response.WriteAsync(result);
+          }
+          return Task.CompletedTask;
         }
       };
     });
@@ -75,8 +122,6 @@ builder.Services.AddHttpClient("DefaultClient", client =>
 //  .AddPolicy("provideWebChatToken", policy =>
 //      policy.RequireClaim("provideWebChatToken"));
 
-
-builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -88,8 +133,11 @@ app.MapDefaultEndpoints();
 
 var validateConfiguration = app.Services.GetRequiredService<DealershipChatBot.AppSettings>();
 
+app.UseCors("RelaxedCorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+
+
 
 //app.MapPost("/refresh-token", async (HttpContext context) =>
 //{

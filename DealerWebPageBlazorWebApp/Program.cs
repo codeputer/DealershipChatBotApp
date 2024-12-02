@@ -1,22 +1,10 @@
-using DealerWebPageBlazorWebApp.Components;
-
-using DealerWebPageBlazorWebAppShared.Configuration;
-using DealerWebPageBlazorWebAppShared.DTOModels;
-using DealerWebPageBlazorWebAppShared.Resources;
-
-using Microsoft.Extensions.Http.Logging;
-
 
 //DealerWebPageBlazorWebApp/Program.cs
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-//temp state persistence for holding issued DealershipChatBot JWT tokens
-builder.Services.AddMemoryCache();
-
 builder.Services.AddSingleton<DealerShipTokenCache>();
-builder.Services.AddSingleton<JWTTokensDTO>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

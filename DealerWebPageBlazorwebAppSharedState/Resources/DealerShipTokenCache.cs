@@ -2,12 +2,15 @@
 
 namespace DealerWebPageBlazorWebAppShared.Resources;
 
-public class DealerShipTokenCache(IMemoryCache memoryCache)
+public class DealerShipTokenCache()
 {
-  private readonly IMemoryCache _memoryCache = memoryCache;
   public record class DealershipTokenRecord(string DealerId, string TokenType);
 
-  public void SetToken(string dealerId, TokenTypeValues tokenTypeValue, string dealerJWTToken)
+  public Dictionary<DealershipTokenRecord, string> DealerJWTTokenDictionary = [];
+  public HashSet<string> DealerJWTTokenList = [];
+
+
+  public void UpsertJwtToken(string dealerId, TokenTypeValues tokenTypeValue, string dealerJWTToken)
   {
     if (tokenTypeValue == TokenTypeValues.Unknown)
     {
@@ -15,24 +18,30 @@ public class DealerShipTokenCache(IMemoryCache memoryCache)
     }
 
     var cacheKey = GetCacheKey(dealerId, tokenTypeValue);
-    _memoryCache.Set(cacheKey, dealerJWTToken);
+    if (!DealerJWTTokenDictionary.TryAdd(cacheKey, dealerJWTToken))
+    {
+      DealerJWTTokenDictionary[cacheKey] = dealerJWTToken;
+    }
+
+    if (DealerJWTTokenList.Contains(dealerId)==false)
+      DealerJWTTokenList.Add(dealerId);
   }
 
-  public string? GetToken(string dealerId, TokenTypeValues tokenType)
+  public string? GetJwtToken(string dealershipId, TokenTypeValues tokenType)
   {
-    var cacheKey = GetCacheKey(dealerId, tokenType);
-    return _memoryCache.Get<string>(cacheKey);
+    var cacheKey = GetCacheKey(dealershipId, tokenType);
+    return this.DealerJWTTokenDictionary.TryGetValue(cacheKey, out var token) ? token : null;
   }
 
-  private string GetCacheKey(string dealerId, TokenTypeValues  tokenTypeValue)
+  private DealershipTokenRecord GetCacheKey(string dealershipId, TokenTypeValues  tokenTypeValue)
   {
     if (tokenTypeValue == TokenTypeValues.Unknown)
     {
       throw new ArgumentException("TokenType is required or is unknown", nameof(tokenTypeValue));
     }
 
-    var dealershipTokenRecord = new DealershipTokenRecord(dealerId, tokenTypeValue.ToString());
-    return dealershipTokenRecord.ToString();
+    var dealershipTokenRecord = new DealershipTokenRecord(dealershipId, tokenTypeValue.ToString());
+    return dealershipTokenRecord;
   }
 }
 

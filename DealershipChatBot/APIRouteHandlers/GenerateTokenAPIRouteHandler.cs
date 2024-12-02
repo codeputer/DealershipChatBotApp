@@ -7,8 +7,8 @@ namespace DealershipChatBot.APIRouteHandlers;
 public class GenerateTokenAPIRouteHandler (DealerShipTokenCache dealerShipTokenCache) : IRouteHandlerDelegate<IResult>
 {
   private readonly DealerShipTokenCache _DealershipTokenCache = dealerShipTokenCache;
-  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.GenerateToken.ToString();
-  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GenerateToken);
+  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.GenerateTokenAPI.ToString();
+  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GenerateTokenAPI);
   public Delegate DelegateHandler => GenerateTokenDelegate;
   public HttpMethod? HttpMethod => HttpMethod.Get;
   public bool ExcludeFromAPIDescription => false;
@@ -18,7 +18,7 @@ public class GenerateTokenAPIRouteHandler (DealerShipTokenCache dealerShipTokenC
   public IResult GenerateTokenDelegate([FromQuery] string dealershipId,
                                        [FromQuery] TokenTypeValues tokenType,
                                        [FromServices] TokenHelper tokenHelper,
-                                       [FromServices] IMemoryCache memoryCache,
+                                       [FromServices] DealerShipTokenCache dealerShipTokenCache,
                                        string clientIPAddress = "")
   {
     if (string.IsNullOrWhiteSpace(dealershipId))
@@ -26,18 +26,14 @@ public class GenerateTokenAPIRouteHandler (DealerShipTokenCache dealerShipTokenC
       return Results.BadRequest("DealershipId is required");
     }
 
-    //if we have it already in cache, return it!
-    if (memoryCache.TryGetValue(dealershipId, out var token))
-    {
-      return Results.Ok(token);
-    }
-
     if (TokenTypeValues.Unknown == tokenType)
     {
       return Results.BadRequest("TokenType is required or is unknown");
     }
 
-    //todo: get dealer name from dealership name
+    var jwtToken = dealerShipTokenCache.GetJwtToken(dealershipId, tokenType);
+    
+    //todo: get dealer name from dealershipid by running query to db? 
     var claims = tokenHelper.GenerateClaims(tokenType,dealershipId, "DealerName", clientIPAddress);
 
     var jwtSignedToken = tokenHelper.GenerateJWTToken(claims);
@@ -59,11 +55,11 @@ public class GenerateTokenAPIRouteHandler (DealerShipTokenCache dealerShipTokenC
     }
 
 
-    var base64JWTEncryptedToken = TokenHelper.Base64Encode(encryptedJWTToken);
+    //var base64JWTEncryptedToken = TokenHelper.Base64Encode(encryptedJWTToken);
 
     //simulates persistence
-    _DealershipTokenCache.SetToken(dealershipId, tokenType, base64JWTEncryptedToken);
+    _DealershipTokenCache.UpsertJwtToken(dealershipId, tokenType, encryptedJWTToken);
 
-    return Results.Ok(base64JWTEncryptedToken);
+    return Results.Ok(encryptedJWTToken);
   }
 }

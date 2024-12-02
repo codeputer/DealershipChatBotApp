@@ -131,13 +131,14 @@ public class TokenHelper
 
     var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
 
+    encryptedAsciiToken = RemoveBearerToken(encryptedAsciiToken);
+
     if (jwtSecurityTokenHandler.CanReadToken(encryptedAsciiToken) == false)
     {
       throw new ArgumentException("Invalid encrypted JWT format", nameof(encryptedAsciiToken));
     }
 
     var validationParameters = GetTokenValidationParameters();
-
 
     try
     {
@@ -158,6 +159,27 @@ public class TokenHelper
       Console.WriteLine($"Token validation failed: {ex.Message}");
       return null;
     }
+  }
+
+ 
+
+  public static string RemoveBearerToken(string encryptedAsciiToken)
+  {
+    //check for Bearer prefix
+    ReadOnlySpan<char> encryptedAsciiTokenSpan = encryptedAsciiToken.AsSpan();
+
+    if (encryptedAsciiTokenSpan.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+    {
+      encryptedAsciiTokenSpan = encryptedAsciiTokenSpan["Bearer ".Length..];
+      encryptedAsciiToken = encryptedAsciiTokenSpan.ToString();
+    }
+
+    //if (IsBase64String(encryptedAsciiToken))
+    //{
+    //  encryptedAsciiToken = Base64Decode(encryptedAsciiToken);
+    //}
+
+    return encryptedAsciiToken;
   }
 
   /// <summary>
@@ -226,17 +248,35 @@ public class TokenHelper
       ];
   }
 
-  public string? GetClaimValue(ClaimsPrincipal user, string claimName)
+  public string? GetClaimValue(ClaimsPrincipal user, ClaimKeyValues claimKeyValue)
   {
-    return GetClaimValueHelper(user, claimName);
+    return GetClaimValueHelper(user, claimKeyValue);
   } 
 
-  public static string? GetClaimValueHelper(ClaimsPrincipal user, string claimName)
+  public static string? GetClaimValueHelper(ClaimsPrincipal claimsPrincipal, ClaimKeyValues claimKeyValue)
   {
     // Find the first claim with the specified name
-    var claim = user?.FindFirst(claimName);
+    var claim = claimsPrincipal?.FindFirst(claimKeyValue.ToString());
 
     // Return the claim's value or null if not found
     return claim?.Value;
+  }
+
+  public static bool IsBase64String(string base64)
+  {
+    if (string.IsNullOrEmpty(base64) || base64.Length % 4 != 0)
+    {
+      return false;
+    }
+
+    try
+    {
+      Convert.FromBase64String(base64);
+      return true;
+    }
+    catch (FormatException)
+    {
+      return false;
+    }
   }
 }

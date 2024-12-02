@@ -6,15 +6,16 @@
 
 <div>
   <label for="dealershipId"><strong>Dealership ID:</strong></label>
-  <input type="text" id="dealershipId" @bind="dealershipId" />
-  <select id="tokenType" @bind="defaultTokenTypeValue">
+  <input type="text" id="dealershipId" @bind="selectedDealershipId" />
+  <select id="tokenType" @bind="selectedTokenTypeValue">
     <option value="@TokenTypeValues.DealershipToken">@TokenTypeValues.DealershipToken</option>
     <option value="@TokenTypeValues.WebChatToken">@TokenTypeValues.WebChatToken</option>
   </select>
 </div>
 <div>
-  <button @onclick="CreateNewToken" style="margin-top: 10px; margin-right: 10px">Generate New Token</button>
-  <button @onclick="UseCachedToken" style="margin-top: 10px;">Retrieve Token</button>
+  <button @onclick="OnGenerateTokenClick" style="margin-top: 10px; margin-right: 10px">Generate New Token</button>
+  <button @onclick="GetCachedTokenClick" style="margin-top: 10px;">Retrieve Token</button>
+  <button @onclick="OnSeedDataClick" style="margin-top: 10px;">Create Seed Tokens</button>
 </div>
 
 @if (string.IsNullOrWhiteSpace(jwtEncryptedBase64EncodedPanel) == false)

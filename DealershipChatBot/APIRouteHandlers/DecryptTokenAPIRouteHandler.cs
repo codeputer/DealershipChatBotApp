@@ -3,8 +3,8 @@ namespace DealershipChatBot.APIRouteHandlers;
 
 public class DecryptTokenAPIRouteHandler : IRouteHandlerDelegate<IResult>
 {
-  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.DecryptToken.ToString();
-  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.DecryptToken);
+  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.DecryptTokenAPI.ToString();
+  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.DecryptTokenAPI);
   public Delegate DelegateHandler => DecryptTokenDelegate;
   public HttpMethod? HttpMethod => HttpMethod.Get;
   public bool ExcludeFromAPIDescription => false;
@@ -16,8 +16,7 @@ public class DecryptTokenAPIRouteHandler : IRouteHandlerDelegate<IResult>
     {
       return Results.BadRequest("Token is required");
     }
-    var asciiEncryptedToken = TokenHelper.Base64Decode(encryptedToken);
-    var claimsPrincipal = tokenHelper.DecryptJWTTokenForClaimsPrincipal(asciiEncryptedToken);
+    var claimsPrincipal = tokenHelper.DecryptJWTTokenForClaimsPrincipal(encryptedToken);
     var claims = claimsPrincipal?.Claims.Select(c => new { c.Type, c.Value })?.ToList() ?? [];
     return Results.Ok(claims);
   }

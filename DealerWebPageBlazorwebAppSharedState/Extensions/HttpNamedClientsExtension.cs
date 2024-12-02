@@ -2,7 +2,7 @@
 
 public static class HttpNamedClientsExtension
 {
-  public static HttpClient GetNamedHttpClient(this IHttpClientFactory httpClientFactory, HttpNamedClients namedClient)
+  public static HttpClient CreatedNamedHttpClient(this IHttpClientFactory httpClientFactory, HttpNamedClients namedClient)
   {
     if (namedClient == HttpNamedClients.Unknown)
     {

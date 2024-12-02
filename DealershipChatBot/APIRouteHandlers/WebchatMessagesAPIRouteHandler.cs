@@ -11,18 +11,19 @@ public class WebchatMessagesAPIRouteHandler : IRouteHandlerDelegate<IResult>
     _tokenHelper = tokenHelper ?? throw new ArgumentNullException(nameof(tokenHelper));
   }
 
-  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.WebChatMessages.ToString();
-  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.WebChatMessages);
+  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.WebChatMessagesAPI.ToString();
+  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.WebChatMessagesAPI);
   public Delegate DelegateHandler => GetWebChatMessages;
   public HttpMethod? HttpMethod => HttpMethod.Post;
   public bool ExcludeFromAPIDescription => false;
-  public bool RequireAuthorization => true;
+  public bool RequireAuthorization => false;
 
   public async Task<IResult> GetWebChatMessages(HttpRequest request, [FromServices] IBotFrameworkHttpAdapter adapter, [FromServices] IBot bot)
   {
     ArgumentNullException.ThrowIfNull(adapter, nameof(adapter));
     ArgumentNullException.ThrowIfNull(bot, nameof(bot));
     ArgumentNullException.ThrowIfNull(request?.HttpContext?.User?.Identity, nameof(request));
+    _logger.LogDebug("Received WebChat Request");
 
     if (request.HttpContext.User.Identity.IsAuthenticated)
     {
@@ -34,7 +35,7 @@ public class WebchatMessagesAPIRouteHandler : IRouteHandlerDelegate<IResult>
         return Results.Unauthorized();
       }
 
-      var dealershipId = _tokenHelper.GetClaimValue(claimsPrincipal, "dealershipId");
+      var dealershipId = _tokenHelper.GetClaimValue(claimsPrincipal, ClaimKeyValues.DealershipId);
 
       //todo: Use dealershipId to fetch dealership-specific data
 

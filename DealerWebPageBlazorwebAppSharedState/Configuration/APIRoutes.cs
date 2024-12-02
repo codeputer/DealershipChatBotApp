@@ -4,11 +4,11 @@ public static class APIRoutes
   public enum DealershipChatBotAPIRoutes  {
     Unknown, //always first to have a good default value
     Version,
-    GenerateToken,
-    DecryptToken,
-    GetWebTokenAPI,
+    GenerateTokenAPI,
+    DecryptTokenAPI,
+    GetWebToken, 
     GetWebChatArtifacts,
-    WebChatMessages
+    WebChatMessagesAPI
   }
 
   public static string GetUrlPath(DealershipChatBotAPIRoutes dealershipChatBotApiRoute)
@@ -16,11 +16,11 @@ public static class APIRoutes
     var routeURL = dealershipChatBotApiRoute switch
     {
       APIRoutes.DealershipChatBotAPIRoutes.Version => string.Concat("/", APIRoutes.DealershipChatBotAPIRoutes.Version),
-      APIRoutes.DealershipChatBotAPIRoutes.GenerateToken => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.GenerateToken),
-      APIRoutes.DealershipChatBotAPIRoutes.DecryptToken => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.DecryptToken),
-      APIRoutes.DealershipChatBotAPIRoutes.GetWebTokenAPI => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.GetWebTokenAPI),
+      DealershipChatBotAPIRoutes.GetWebToken => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.GetWebToken),
+      APIRoutes.DealershipChatBotAPIRoutes.GenerateTokenAPI => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.GenerateTokenAPI),
+      APIRoutes.DealershipChatBotAPIRoutes.DecryptTokenAPI => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.DecryptTokenAPI),
       APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts),
-      APIRoutes.DealershipChatBotAPIRoutes.WebChatMessages => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.WebChatMessages),
+      APIRoutes.DealershipChatBotAPIRoutes.WebChatMessagesAPI => string.Concat("/api/", APIRoutes.DealershipChatBotAPIRoutes.WebChatMessagesAPI),
       _ => "N/A",
     };
 
@@ -28,5 +28,16 @@ public static class APIRoutes
       throw new ArgumentNullException($"Route:>{dealershipChatBotApiRoute} is not defined<");
 
     return routeURL;
+  }
+
+  public static Uri? GetAbsoluteUri(DealershipChatBotAPIRoutes dealershipChatBotApiRoute, string hostUriConfiguration)
+  {
+    UriBuilder? returningUri = null;
+    if (Uri.TryCreate(hostUriConfiguration, UriKind.Absolute, out Uri? hostUri))
+    {
+      var port = hostUri.Port > 0 ? hostUri.Port : 80;
+      returningUri = new UriBuilder(hostUri.Scheme, hostUri.Host, port, pathValue: APIRoutes.GetUrlPath(dealershipChatBotApiRoute));
+    }
+    return returningUri?.Uri;
   }
 }
