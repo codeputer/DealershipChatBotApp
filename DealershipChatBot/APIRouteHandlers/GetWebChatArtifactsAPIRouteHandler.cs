@@ -1,6 +1,10 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
 
+using DealerWebPageBlazorWebAppShared.DTOModels;
+
+using Microsoft.Extensions.Primitives;
+
 namespace DealershipChatBot.APIRouteHandlers;
 
 public class GetWebChatArtifactsAPIRouteHandler : IRouteHandlerDelegate<IResult>
@@ -17,17 +21,19 @@ public class GetWebChatArtifactsAPIRouteHandler : IRouteHandlerDelegate<IResult>
   public HttpMethod? HttpMethod => HttpMethod.Get;
   public bool ExcludeFromAPIDescription => false;
   public bool RequireAuthorization => false;
-  public IResult GetWebChatArtifactsDelegate(HttpContext httpContext,
+
+  private IResult GetWebChatArtifactsDelegate(HttpContext httpContext,
                                              [FromServices] TokenHelper tokenHelper
                                              )
   {
 
     var request = httpContext.Request;
 
-    var clientIp = request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
+   // var clientIp = request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
 
+    StringValues authHeader = string.Empty;
     // Step 1: Validate the Dealer Token
-    if (!request.Headers.TryGetValue("Authorization", out var authHeader) || string.IsNullOrWhiteSpace(authHeader))
+    if (request.Headers.TryGetValue("Authorization", out authHeader) == false|| string.IsNullOrWhiteSpace(authHeader))
     {
       return Results.Unauthorized();
     }
@@ -51,12 +57,11 @@ public class GetWebChatArtifactsAPIRouteHandler : IRouteHandlerDelegate<IResult>
     if (string.IsNullOrWhiteSpace(templateFunction))
       return Results.InternalServerError("WebChat function template is missing");
 
-
     var getWebTokenUri = APIRoutes.GetAbsoluteUri(APIRoutes.DealershipChatBotAPIRoutes.GetWebToken, _appSettings.DealershipChatBotConfiguration.HostURL);
     var getWebChatMessageUri = APIRoutes.GetAbsoluteUri(APIRoutes.DealershipChatBotAPIRoutes.WebChatMessagesAPI, _appSettings.DealershipChatBotConfiguration.HostURL);
+
     ArgumentNullException.ThrowIfNull(getWebTokenUri);
     ArgumentNullException.ThrowIfNull(getWebChatMessageUri);
-
 
     // Use StringBuilder for efficient string replacement
     var tailoredTemplateFunction = new StringBuilder(templateFunction)
@@ -65,7 +70,7 @@ public class GetWebChatArtifactsAPIRouteHandler : IRouteHandlerDelegate<IResult>
         .Replace("{chatEndpointUrl}", getWebTokenUri.ToString())
         .ToString();
 
-    return Results.Ok(tailoredTemplateFunction);
+    return Results.Json(CustomizedDealerFunctionDTO.CustomizedDealerFunctionDTOFactory(tailoredTemplateFunction));
   }
 }
 

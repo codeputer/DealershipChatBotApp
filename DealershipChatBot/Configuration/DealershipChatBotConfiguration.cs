@@ -1,8 +1,9 @@
 ﻿using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace DealershipChatBot.Configuration;
 
-public class DealershipChatBotConfiguration
+public partial class DealershipChatBotConfiguration
 {
   public required string MicrosoftAppId { get; init; }
   public required string MicrosoftAppPassword { get; init; }
@@ -53,8 +54,17 @@ public class DealershipChatBotConfiguration
       throw new FileNotFoundException($"The file '{templateFile}' does not exist in the current directory.");
     }
 
-    return File.ReadAllText(fullPath);
+    var jsFileContent = File.ReadAllText(fullPath);
+
+    // Clean the file content (remove unwanted characters like carriage returns and line feeds)
+    string cleanedContent = jsFileContent.Replace("\r", "").Replace("\n", "");
+
+    // Ensure no escape sequences are introduced
+    cleanedContent = cleanedContent.Replace("\\\"", "\""); // Convert \" to "
+
+    return cleanedContent;
   }
+
 }
 
 

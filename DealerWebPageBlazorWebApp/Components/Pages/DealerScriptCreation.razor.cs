@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using DealerWebPageBlazorWebAppShared.DTOModels;
+
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.JSInterop;
 
 namespace DealerWebPageBlazorWebApp.Components.Pages;
@@ -81,11 +83,10 @@ public partial class DealerScriptCreation : IDisposable
 
     //establish the path
     var webChatArtifactsAPIUri = APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts);
-    HttpResponseMessage httpResponse;
+    CustomizedDealerFunctionDTO? customizedDealerFunctionDTO = null;
     try
     {
-      httpResponse = await httpClient.GetAsync(webChatArtifactsAPIUri);
-      httpResponse?.EnsureSuccessStatusCode();
+      customizedDealerFunctionDTO = await httpClient.GetFromJsonAsync<CustomizedDealerFunctionDTO>(webChatArtifactsAPIUri);
     }
     catch (Exception ex)
     {
@@ -93,10 +94,9 @@ public partial class DealerScriptCreation : IDisposable
       return;
     } 
 
-    var result = await httpResponse!.Content.ReadAsStringAsync();
-    if (string.IsNullOrWhiteSpace(result) == false)
+    if (customizedDealerFunctionDTO is not null &&  string.IsNullOrWhiteSpace(customizedDealerFunctionDTO.CustomizedScript) == false)
     {
-      this.GeneratedScript = result;
+      this.GeneratedScript = customizedDealerFunctionDTO.DecodeFromBase64();
     }
     else
     {
