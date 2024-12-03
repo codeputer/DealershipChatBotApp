@@ -2,17 +2,21 @@
 using DealershipChatBot.APIRouteHandlers;
 
 using DealerWebPageBlazorWebAppShared.Managers;
+using DealerWebPageBlazorWebAppShared.Policies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddServiceDefaults();
+var logger = LoggerFactory.Create(config =>
+{
+  config.AddConsole();
+}).CreateLogger("Program");
+
+builder.AddServiceDefaults(logger);
 
 builder.Services.AddSingleton<IBotFrameworkHttpAdapter, CloudAdapter>();
 builder.Services.AddSingleton<DealershipChatBot.AppSettings>();
 builder.Services.AddSingleton<MinimalAPIRouteManager>();
 builder.Services.AddSingleton<TokenHelper>();
-
-
 
 builder.Services.AddTransient<IBot, DealershipBot>();
 builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, VersionAPIRouteHandler>();
@@ -118,9 +122,13 @@ builder.Services.AddHttpClient("DefaultClient", client =>
 #endif
 
 //todo: authorization is policy based, where a policy has one or more claims
-//builder.Services.AddAuthorizationBuilder()
-//  .AddPolicy("provideWebChatToken", policy =>
-//      policy.RequireClaim("provideWebChatToken"));
+builder.Services.AddAuthorizationBuilder()
+  .AddPolicy(Policies.TokenTypePolicyValues.DealershipChatTokenPolicy.ToString(), policy =>
+      policy.RequireClaim(ClaimKeyValues.TokenType.ToString(), TokenTypeValues.DealershipToken.ToString()));
+ 
+builder.Services.AddAuthorizationBuilder()
+  .AddPolicy(Policies.TokenTypePolicyValues.WebChatTokenPolicy.ToString(), policy =>
+      policy.RequireClaim(ClaimKeyValues.TokenType.ToString(), TokenTypeValues.WebChatToken.ToString()));
 
 builder.Services.AddAuthorization();
 

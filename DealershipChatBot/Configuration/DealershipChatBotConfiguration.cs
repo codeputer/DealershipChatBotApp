@@ -56,13 +56,13 @@ public partial class DealershipChatBotConfiguration
 
     var jsFileContent = File.ReadAllText(fullPath);
 
-    // Clean the file content (remove unwanted characters like carriage returns and line feeds)
-    string cleanedContent = jsFileContent.Replace("\r", "").Replace("\n", "");
+    //// Clean the file content (remove unwanted characters like carriage returns and line feeds)
+    //string cleanedContent = jsFileContent.Replace("\r", "").Replace("\n", "");
 
-    // Ensure no escape sequences are introduced
-    cleanedContent = cleanedContent.Replace("\\\"", "\""); // Convert \" to "
+    //// Ensure no escape sequences are introduced
+    //cleanedContent = cleanedContent.Replace("\\\"", "\""); // Convert \" to "
 
-    return cleanedContent;
+    return jsFileContent;
   }
 
 }

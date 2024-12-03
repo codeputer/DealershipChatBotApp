@@ -7,69 +7,79 @@
 
 <!-- Script to load the webchat -->
 <script>
-
   (async function () {
-      console.log("function has started");
-      const dealerJWTToken = "ZXlKaGJHY2lPaUpCTWpVMlMxY2lMQ0psYm1NaU9pSkJNalUyUTBKRExVaFROVEV5SWl3aWRIbHdJam9pU2xkVUlpd2lZM1I1SWpvaVNsZFVJbjAuVWxTWjZNVXk2VnZieXM4SWV0NFNfMV9iMW9sT29xMDhmeTIyRGo2bzAtVjBjak9NUUJTM2JCOGotTGNWb1RWZlFtNE9oeTNPc2hBMDdXVlM0LWF5OWl6ZGZZd0kxQXd6LkhlbFY3Y3FvQmhlMUhUbkdOUGVKOHcuM3ZlSDM4a1BMdEhIUEhBb2FibUFycDhUQ1V6dTBVYWV2WC16S3VTbkg4X210bFIzM2ozdjZtUDBQZzJqdm1ya0RTa2x4bm03V3RPQlNxMUs3M2dPbFVlYkFiUDlVeUh1RU5QMWpGckEwUFYwNnl4QldwaDN3ZHIzMlRxam1MRXBGellnQjF1TW9BSFR1TmxST0MtSkYtdGMxbUZESE5SUlZYREtJMVhLWVRlVktiT2RONXpXNEM3U2dTUXFOZVlpT3I2dFRZOFJBdHA2Q2taWW9hVUpob2gyMGJVNW16RldPUVhSQmlGUFJvMHVtUlVvaV9ZLUVnOFZsR2tvNFY5cDBNMEZvYndidHVsQmwyQXpuOUZiSkREZFducFJpc1RJZmxUMDIxNFRUMGZkdWlkQVAyZjdTdDFfOFVVUkpuMHB3RzdDRDV0enlHdW14TW9hTm0wSUlXTzdZcGQwQnkyWk1ybmIxcFVKQ0lGTGRDTzNSWHM2Z08zRlZ1SmMzM2E1dTEyOWNUdFQ0SWlicng5UFJsUEl4ZUd0eGlBQm01QTctX1RNaE45ZmNUQjEzcFUwaUFPQVNLQVZ2Mjd6ZHFkRDViSHNuS0F6Z0Y4Yi1ZYWstNHFMMXc5NDVoRExKcUJWM3NjaE1DSTJ5S2p1WGR3TlZ2RDZYU3k5YU9DUGEyX0NNV0tITHBfb3Q3amtsSFd5ck0yX1dwWE9na0RqMXZwanJ0d0s4dVpacjkwLldVQkZMNEFnYWFBbHZyNU52bG92OWxhblhNdkp4dzI2MktITThwSG1Dc0E=";
-      const webTokenUrl = "https://localhost:7021/api/GetWebTokenAPI";
-      const chatEndpointUrl = "https://localhost:7021/api/WebChatMessagesAPI";
+    const webTokenUrl = "https://localhost:7021/api/GetWebToken"; // URL to fetch WebChat token
+    const chatEndpointUrl = "https://localhost:7021/api/WebChatMessagesAPI"; // URL for WebChat messages
 
-      async function fetchWebToken() {
-          const response = await fetch(webTokenUrl, {
-              method: 'GET',
-              headers: {
-                  Authorization: `Bearer ${dealerJWTToken}`,
-                  'Content-Type': 'application/json',
-              },
-          });
-          if (!response.ok) throw new Error('Failed to fetch WebToken');
-          const data = await response.json();
-          const newToken = data.webToken;
-          localStorage.setItem('webToken', newToken);
-          console.log('Fetched and saved new WebToken:', newToken);
-          return newToken;
+    // Function to fetch a new WebToken
+    async function fetchWebToken() {
+      const response = await fetch(webTokenUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer eyJhbGciOiJBMjU2S1ciLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwidHlwIjoiSldUIiwiY3R5IjoiSldUIn0.ORFN4E_d82IIOzLCSQq7aMwv1Kgyq5PjU3ro6tHeAE9kdFE6hhDFJiSIUS-sbtgSp45YHQ4NIyAKFDIyuBxAS-WvF6cUi7ev.ntSq2CWXP0pJ0VsvGJNR9g.QvS5n4uuVD6rGaQDVLehR2C_-RyXEYbJX1jnkLOVaxXLQ7AqPZ3o1cL2aqsVTc_x4UXi3G0RGNbQ-T4IZWtny3jR1YQYbZ_XMdy6zFdl9AHJI5zG7hLg5ZQWTHkKQiBpRVpqVjgKAS9eUJPXngPu9mBoVarSn-htVZQElFQH1kNNqrgdJZRmeMy-E6dMkTt1u8fpPK78olbIhuVk1lVjcbmeQM_3YHwzjmmWYrEDnT2sHnpse7Gk3r5sotv1zx8mL577DodOkCZtUZ15UBDRAvX_DYZGemsxUI9FUjGUg8ASviCBZv8zcugjOdRo2pVaKK8JTdCUcah834-Q2pVoZPHJfgSnCL5_8wPZrTlEgPsPYJc9CDBsjeQk97k1SYHk2rxBC4sgcf9fpNvw1NioAtmnrUcfKfILG7q-5VaWxYTB1VQI8aONZi_xKdBA2GM4pFJohHIJkrBwxGaJjmPvbgMiWgWsLyaDBBTP3biD2KZu1vTRy7GFgD75ktiuR0VhB1vsYY13e7uKk7bjkd3KtTJGFWuGD1Pt4a8tjuM6rEY.ElWQpv1KDnd8_1Sj-7ZCm3EIswYuAsnu3U6gAsy7h5s`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch WebToken");
+
+      const data = await response.json();
+      const newToken = data.jwttoken;
+
+      // Save the token to localStorage
+      localStorage.setItem("webToken", newToken);
+
+      console.log("Fetched and saved new WebToken:", newToken);
+
+      return newToken;
+    }
+
+    // Function to get a valid token (reuse or fetch new)
+    async function getWebToken() {
+      let token = localStorage.getItem("webToken");
+      if (!token) {
+        console.log("No token in storage. Fetching a new one...");
+        token = await fetchWebToken();
+      }
+      return token;
+    }
+
+    // Function to send chat data
+    async function sendChatData(questions) {
+      let token = await getWebToken();
+
+      const response = await fetch(chatEndpointUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ questions }),
+      });
+
+      if (response.status === 401) {
+        console.log("Token expired. Fetching a new one...");
+        token = await fetchWebToken();
+        return sendChatData(questions);
       }
 
-      async function getWebToken() {
-          let token = localStorage.getItem('webToken');
-          if (!token) {
-              console.log('No token in storage. Fetching a new one...');
-              token = await fetchWebToken();
-          }
-          return token;
-      }
+      if (!response.ok) throw new Error("Failed to send chat data");
 
-      async function sendChatData(questions) {
-          let token = await getWebToken();
-          const response = await fetch(chatEndpointUrl, {
-              method: 'POST',
-              headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ questions }),
-          });
-          if (response.status === 401) {
-              console.log('Token expired. Fetching a new one...');
-              token = await fetchWebToken();
-              return sendChatData(questions);
-          }
-          if (!response.ok) throw new Error('Failed to send chat data');
-          return await response.json();
-      }
+      return await response.json();
+    }
 
-      // Dynamically inject HTML and CSS for the chat window
-      const chatContainer = document.createElement("div");
-      chatContainer.id = "chatContainer";
-      chatContainer.innerHTML = `
+    // Dynamically inject HTML and CSS for the chat window
+    const chatContainer = document.createElement("div");
+    chatContainer.id = "chatContainer";
+    chatContainer.innerHTML = `
           <div id="chatWindow" contenteditable="true"></div>
           <div id="chatLog"></div>
       `;
-      document.body.appendChild(chatContainer);
+    document.body.appendChild(chatContainer);
 
-      // Add embedded CSS
-      const style = document.createElement("style");
-      style.textContent = `
+    // Add embedded CSS
+    const style = document.createElement("style");
+    style.textContent = `
           #chatContainer {
               width: 400px;
               margin: 20px auto;
@@ -93,22 +103,39 @@
               background-color: #f9f9f9;
           }
       `;
-      document.head.appendChild(style);
+    document.head.appendChild(style);
 
+    // Initialize questions array
+    const questions = [];
 
-      const questions = [];
-      document.querySelector('#chatWindow').addEventListener('input', async (e) => {
-          const questionAsked = e.target.value;
-          questions.push({
-              QuestionAsked: questionAsked,
-              QuestionResponse: '',
-          });
-          console.log('Updated Questions array:', questions);
-          const response = await sendChatData(questions);
-          console.log('Chat Response:', response);
+    // Add event listener to capture chat messages
+    document.querySelector("#chatWindow").addEventListener("input", async (e) => {
+      const questionAsked = e.target.textContent;
+
+      // Add the new question to the array
+      questions.push({
+        QuestionAsked: questionAsked,
+        QuestionResponse: "",
       });
 
-      await getWebToken();
+      console.log("Updated Questions array:", questions);
+
+      // Send the data to the server
+      const response = await sendChatData(questions);
+
+      // Display the response in the chat log
+      const chatLog = document.querySelector("#chatLog");
+      const responseDiv = document.createElement("div");
+      responseDiv.textContent = `Response: ${JSON.stringify(response)}`;
+      chatLog.appendChild(responseDiv);
+
+      console.log("Chat Response:", response);
+    });
+
+    // Ensure the WebToken is available at script startup
+    await getWebToken();
   })();
+
+
 
 </script>

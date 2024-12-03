@@ -1,5 +1,4 @@
 ﻿(async function () {
-  const dealerJWTToken = "{dealerJWTToken}"; // Replace with the actual dealer token
   const webTokenUrl = "{webTokenUrl}"; // URL to fetch WebChat token
   const chatEndpointUrl = "{chatEndpointUrl}"; // URL for WebChat messages
 
@@ -8,7 +7,7 @@
     const response = await fetch(webTokenUrl, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${dealerJWTToken}`,
+        Authorization: `Bearer {dealerJWTToken}`,
         "Content-Type": "application/json",
       },
     });
@@ -16,7 +15,7 @@
     if (!response.ok) throw new Error("Failed to fetch WebToken");
 
     const data = await response.json();
-    const newToken = data.webToken;
+    const newToken = data.jwttoken;
 
     // Save the token to localStorage
     localStorage.setItem("webToken", newToken);

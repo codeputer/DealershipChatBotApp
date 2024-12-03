@@ -1,4 +1,6 @@
-﻿namespace DealershipChatBot.APIRouteHandlers;
+﻿using DealerWebPageBlazorWebAppShared.APIEndpoints;
+
+namespace DealershipChatBot.APIRouteHandlers;
 
 public class VersionAPIRouteHandler : IRouteHandlerDelegate<IResult>
 {

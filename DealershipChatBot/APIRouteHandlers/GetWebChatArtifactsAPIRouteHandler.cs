@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
 
+using DealerWebPageBlazorWebAppShared.APIEndpoints;
 using DealerWebPageBlazorWebAppShared.DTOModels;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Primitives;
 
 namespace DealershipChatBot.APIRouteHandlers;
@@ -20,13 +22,15 @@ public class GetWebChatArtifactsAPIRouteHandler : IRouteHandlerDelegate<IResult>
   public Delegate DelegateHandler => GetWebChatArtifactsDelegate;
   public HttpMethod? HttpMethod => HttpMethod.Get;
   public bool ExcludeFromAPIDescription => false;
-  public bool RequireAuthorization => false;
+  public bool RequireAuthorization => true;
 
+  //[Authorize("DealershipChatTokenPolicy")] todo: signin to MS Entra gives this claim
   private IResult GetWebChatArtifactsDelegate(HttpContext httpContext,
                                              [FromServices] TokenHelper tokenHelper
                                              )
   {
-
+    _= DealerWebPageBlazorWebAppShared.Policies.Policies.TokenTypePolicyValues.DealershipChatTokenPolicy;
+    
     var request = httpContext.Request;
 
    // var clientIp = request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
@@ -67,7 +71,7 @@ public class GetWebChatArtifactsAPIRouteHandler : IRouteHandlerDelegate<IResult>
     var tailoredTemplateFunction = new StringBuilder(templateFunction)
         .Replace("{dealerJWTToken}", authHeader)
         .Replace("{webTokenUrl}", getWebTokenUri.ToString())
-        .Replace("{chatEndpointUrl}", getWebTokenUri.ToString())
+        .Replace("{chatEndpointUrl}", getWebChatMessageUri.ToString())
         .ToString();
 
     return Results.Json(CustomizedDealerFunctionDTO.CustomizedDealerFunctionDTOFactory(tailoredTemplateFunction));

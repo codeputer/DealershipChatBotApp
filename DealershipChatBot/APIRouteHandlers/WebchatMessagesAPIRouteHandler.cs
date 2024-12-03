@@ -1,4 +1,8 @@
-﻿namespace DealershipChatBot.APIRouteHandlers;
+﻿using DealerWebPageBlazorWebAppShared.APIEndpoints;
+
+using Microsoft.AspNetCore.Authorization;
+
+namespace DealershipChatBot.APIRouteHandlers;
 
 public class WebchatMessagesAPIRouteHandler : IRouteHandlerDelegate<IResult>
 {
@@ -18,8 +22,11 @@ public class WebchatMessagesAPIRouteHandler : IRouteHandlerDelegate<IResult>
   public bool ExcludeFromAPIDescription => false;
   public bool RequireAuthorization => false;
 
+  [Authorize("WebChatTokenPolicy")]
   public async Task<IResult> GetWebChatMessages(HttpRequest request, [FromServices] IBotFrameworkHttpAdapter adapter, [FromServices] IBot bot)
   {
+    _ = DealerWebPageBlazorWebAppShared.Policies.Policies.TokenTypePolicyValues.WebChatTokenPolicy;
+
     ArgumentNullException.ThrowIfNull(adapter, nameof(adapter));
     ArgumentNullException.ThrowIfNull(bot, nameof(bot));
     ArgumentNullException.ThrowIfNull(request?.HttpContext?.User?.Identity, nameof(request));
@@ -28,8 +35,8 @@ public class WebchatMessagesAPIRouteHandler : IRouteHandlerDelegate<IResult>
     if (request.HttpContext.User.Identity.IsAuthenticated)
     {
       // Retrieve JWT Token from header
-      var token = request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-      ClaimsPrincipal? claimsPrincipal = _tokenHelper.DecryptJWTTokenForClaimsPrincipal(token);
+      var authorizationHeader = request.Headers["Authorization"].ToString();
+      ClaimsPrincipal? claimsPrincipal = _tokenHelper.DecryptJWTTokenForClaimsPrincipal(authorizationHeader);
       if (claimsPrincipal is null || claimsPrincipal.Claims.Any() == false)
       {
         return Results.Unauthorized();

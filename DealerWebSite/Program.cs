@@ -1,6 +1,11 @@
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddServiceDefaults();
+var logger = LoggerFactory.Create(config =>
+{
+  config.AddConsole();
+}).CreateLogger("Program");
+
+builder.AddServiceDefaults(logger);
 
 var appSettings = new AppSettings(builder.Configuration); 
 builder.Services.AddHttpClient(HttpNamedClients.DealershipChatBot.ToString(), client =>

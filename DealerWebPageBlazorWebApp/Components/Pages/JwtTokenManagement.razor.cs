@@ -1,4 +1,7 @@
-﻿namespace DealerWebPageBlazorWebApp.Components.Pages;
+﻿using DealerWebPageBlazorWebAppShared.APIEndpoints;
+using DealerWebPageBlazorWebAppShared.DTOModels;
+
+namespace DealerWebPageBlazorWebApp.Components.Pages;
 
 public partial class JwtTokenManagement
 {
@@ -28,9 +31,9 @@ public partial class JwtTokenManagement
     DealerShipTokenCache.DealerJWTTokenList.Clear();
     for (int i = 123; i <= 125; i++)
     {
-      var delershipId = i.ToString();
-      var newJWTToken = await GetNewJwtToken(delershipId, TokenTypeValues.DealershipToken);
-      DealerShipTokenCache.UpsertJwtToken(delershipId, TokenTypeValues.DealershipToken, newJWTToken);
+      var dealerShipId = i.ToString();
+      var newJWTToken = await GetNewJwtToken(dealerShipId, TokenTypeValues.DealershipToken);
+      DealerShipTokenCache.UpsertJwtToken(dealerShipId, TokenTypeValues.DealershipToken, newJWTToken);
     }
   }
 
@@ -125,12 +128,11 @@ public partial class JwtTokenManagement
     var urlWithQueryString = QueryHelpers.AddQueryString(generateTokenHostUrl, queryParams);
 
     var dealershipChatBotHttpClient = httpClientFactory.CreatedNamedHttpClient(HttpNamedClients.DealershipChatBot);
-    var response = await dealershipChatBotHttpClient.GetAsync(urlWithQueryString);
+    var jWTTokenDTO = await dealershipChatBotHttpClient.GetFromJsonAsync<JWTTokenDTO>(urlWithQueryString);
     var jwtToken = string.Empty;
-    if (response.IsSuccessStatusCode)
+    if (jWTTokenDTO is not null)
     {
-      jwtToken = await response.Content.ReadAsStringAsync();
-      jwtToken = jwtToken.Trim('"'); //the token and jwtpanel are in base 64 encoded format, no quotes
+      jwtToken = jWTTokenDTO.JWTToken;  
     }
     else
     {

@@ -12,3 +12,4 @@ global using DealershipChatBot;
 global using System.IdentityModel.Tokens.Jwt;
 global using DealerWebPageBlazorWebAppShared.Resources;
 global using DealerWebPageBlazorWebAppShared.Utilities.String;
+global using DealerWebPageBlazorWebAppShared.DTOModels;

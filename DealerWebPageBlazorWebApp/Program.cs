@@ -1,8 +1,14 @@
 
 //DealerWebPageBlazorWebApp/Program.cs
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddServiceDefaults();
+var logger = LoggerFactory.Create(config =>
+{
+  config.AddConsole();
+}).CreateLogger("Program");
+
+builder.AddServiceDefaults(logger);
 
 builder.Services.AddSingleton<DealerShipTokenCache>();
 

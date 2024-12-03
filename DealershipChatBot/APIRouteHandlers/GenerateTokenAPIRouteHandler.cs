@@ -1,5 +1,7 @@
-﻿using DealerWebPageBlazorWebAppShared.Resources;
+﻿using DealerWebPageBlazorWebAppShared.APIEndpoints;
+using DealerWebPageBlazorWebAppShared.Resources;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace DealershipChatBot.APIRouteHandlers;
@@ -21,6 +23,9 @@ public class GenerateTokenAPIRouteHandler (DealerShipTokenCache dealerShipTokenC
                                        [FromServices] DealerShipTokenCache dealerShipTokenCache,
                                        string clientIPAddress = "")
   {
+    _ = DealerWebPageBlazorWebAppShared.Policies.Policies.TokenTypePolicyValues.DealershipChatTokenPolicy;
+
+
     if (string.IsNullOrWhiteSpace(dealershipId))
     {
       return Results.BadRequest("DealershipId is required");
@@ -54,12 +59,9 @@ public class GenerateTokenAPIRouteHandler (DealerShipTokenCache dealerShipTokenC
       throw new Exception("WebChatToken could not be created", ex);
     }
 
-
-    //var base64JWTEncryptedToken = TokenHelper.Base64Encode(encryptedJWTToken);
-
     //simulates persistence
     _DealershipTokenCache.UpsertJwtToken(dealershipId, tokenType, encryptedJWTToken);
 
-    return Results.Ok(encryptedJWTToken);
+    return Results.Json(new JWTTokenDTO() { JWTToken = encryptedJWTToken });
   }
 }

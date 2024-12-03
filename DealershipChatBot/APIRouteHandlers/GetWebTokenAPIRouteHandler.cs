@@ -1,4 +1,10 @@
-﻿namespace DealershipChatBot.APIRouteHandlers;
+﻿using System.Reflection.Metadata.Ecma335;
+
+using DealerWebPageBlazorWebAppShared.APIEndpoints;
+
+using Microsoft.AspNetCore.Authorization;
+
+namespace DealershipChatBot.APIRouteHandlers;
 
 public class GetWebTokenAPIRouteHandler(AppSettings appSettings) : IRouteHandlerDelegate<IResult>
 {
@@ -9,11 +15,14 @@ public class GetWebTokenAPIRouteHandler(AppSettings appSettings) : IRouteHandler
   public Delegate DelegateHandler => GetWebTokenUsingDealerJWT;
   public HttpMethod? HttpMethod => HttpMethod.Get;
   public bool ExcludeFromAPIDescription => false;
-  public bool RequireAuthorization => false;
+  public bool RequireAuthorization => true;
+
+  [Authorize("DealershipChatTokenPolicy")]
   public IResult GetWebTokenUsingDealerJWT(HttpContext httpContext,
                                              [FromServices] TokenHelper tokenHelper
                                              )
   {
+    _ = DealerWebPageBlazorWebAppShared.Policies.Policies.TokenTypePolicyValues.DealershipChatTokenPolicy;
 
     var request = httpContext.Request;
 
@@ -39,13 +48,14 @@ public class GetWebTokenAPIRouteHandler(AppSettings appSettings) : IRouteHandler
     if (string.IsNullOrWhiteSpace(dealershipId))
       return Results.Unauthorized();
 
+    //todo: get dealer name from database....
     var claims = tokenHelper.GenerateClaims(TokenTypeValues.WebChatToken, dealershipId, "DealerName", clientIp);
     var webchatToken = tokenHelper.GenerateJWTToken(claims);
 
     if (string.IsNullOrWhiteSpace(webchatToken))
       return Results.Empty;
 
-    return Results.Ok(webchatToken);
+    return Results.Json(new JWTTokenDTO { JWTToken = webchatToken });
   }
 }
 
