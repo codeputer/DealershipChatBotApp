@@ -2,7 +2,6 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 const string DealershipChatBotAPI = "DealershipChatBot";
 const string DealerWebPageBlazorWebApp = "DealerWebPageBlazorWebApp";
-const string DealerWebPageBlazorWebAppClient = "DealerWebPageBlazorWebAppClient";
 const string DealerWebSite = "DealerWebSite"; 
 
 //chat bot is the backend service with the capability to generate tokens as well as conducts the chat
@@ -30,15 +29,7 @@ dealershipChatBotServiceAPI
   .WithEnvironment("DealershipChatBotConfiguration__AudienceURL", dealerWebPageBlazorWebApp_endpoint)
   ;
 
-//var dealerWebPageBlazorWebApp_Client = builder.AddProject<Projects.DealerWebPageBlazorWebAppClient>(DealerWebPageBlazorWebAppClient)
-//  .WithEnvironment("DealershipChatBotConfiguration__HostURL", chatbotService_Endpoint)
-//  .WithEnvironment("DealershipChatBotConfiguration__AudienceURL", dealerWebPageBlazorWebApp_endpoint);
-
 builder.AddProject<Projects.DealerWebSite>(DealerWebSite)
   .WithEnvironment("ChatbotServiceConfiguration__chatbotServiceUrl", chatbotService_Endpoint);
-
-//var dealerWebPageBlazorWebApp_Client = builder.AddProject<Projects.DealerWebPageBlazorWebAppClient>(DealerWebPageBlazorWebAppClient)
-//  .WithEnvironment("DealershipChatBotConfiguration__HostURL", chatbotService_Endpoint)
-//  .WithEnvironment("DealershipChatBotConfiguration__AudienceURL", dealerWebPageBlazorWebApp_endpoint);
 
 builder.Build().Run();

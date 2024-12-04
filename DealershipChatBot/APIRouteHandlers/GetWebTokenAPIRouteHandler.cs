@@ -10,8 +10,8 @@ public class GetWebTokenAPIRouteHandler(AppSettings appSettings) : IRouteHandler
 {
   private readonly AppSettings _appSettings = appSettings;
 
-  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.GetWebToken.ToString();
-  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GetWebToken);
+  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.GetWebTokenAPI.ToString();
+  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GetWebTokenAPI);
   public Delegate DelegateHandler => GetWebTokenUsingDealerJWT;
   public HttpMethod? HttpMethod => HttpMethod.Get;
   public bool ExcludeFromAPIDescription => false;

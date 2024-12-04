@@ -4,8 +4,8 @@ namespace DealershipChatBot.APIRouteHandlers;
 
 public class VersionAPIRouteHandler : IRouteHandlerDelegate<IResult>
 {
-  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.Version.ToString();
-  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.Version);
+  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.VersionAPI.ToString();
+  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.VersionAPI);
   public Delegate DelegateHandler => this.VersionDelegate;
   public HttpMethod HttpMethod => HttpMethod.Get;
   public bool ExcludeFromAPIDescription => false;

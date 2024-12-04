@@ -168,8 +168,7 @@ public partial class DealerScriptCreation : IDisposable
     var httpClient = _HttpClientFactory.CreatedNamedHttpClient(HttpNamedClients.DealershipChatBot);
     httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", this.DealerJWTToken);
 
-    //establish the path
-    var webChatArtifactsAPIUri = APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts);
+    var webChatArtifactsAPIUri = APIRoutes.GetAbsoluteUri(APIRoutes.DealershipChatBotAPIRoutes.GetDealershipChatWindowScriptAPI, AppSettings.ChatbotServiceConfiguration.ChatbotServiceUrl);
     CustomizedDealerFunctionDTO? customizedDealerFunctionDTO;
     try
     {

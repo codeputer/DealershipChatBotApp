@@ -9,16 +9,16 @@ using Microsoft.Extensions.Primitives;
 
 namespace DealershipChatBot.APIRouteHandlers;
 
-public class GetWebChatArtifactsAPIRouteHandler : IRouteHandlerDelegate<IResult>
+public class GetDealerChatWindowScriptAPIHandler : IRouteHandlerDelegate<IResult>
 {
   private readonly AppSettings _appSettings;
-    public GetWebChatArtifactsAPIRouteHandler(AppSettings appSettings)
+    public GetDealerChatWindowScriptAPIHandler(AppSettings appSettings)
   {
     _appSettings = appSettings;
   }
 
-  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts.ToString();
-  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GetWebChatArtifacts);
+  public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.GetDealershipChatWindowScriptAPI.ToString();
+  public string RoutePath => APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GetDealershipChatWindowScriptAPI);
   public Delegate DelegateHandler => GetWebChatArtifactsDelegate;
   public HttpMethod? HttpMethod => HttpMethod.Get;
   public bool ExcludeFromAPIDescription => false;
@@ -45,7 +45,6 @@ public class GetWebChatArtifactsAPIRouteHandler : IRouteHandlerDelegate<IResult>
     if (string.IsNullOrWhiteSpace(authHeader))
       return Results.Unauthorized();
 
-    authHeader = TokenHelper.RemoveBearerToken(authHeader!);
     var dealershipTokenClaims = tokenHelper.DecryptJWTTokenForClaimsPrincipal(authHeader!);  
 
     var dealershipId = string.Empty;
@@ -61,7 +60,7 @@ public class GetWebChatArtifactsAPIRouteHandler : IRouteHandlerDelegate<IResult>
     if (string.IsNullOrWhiteSpace(templateFunction))
       return Results.InternalServerError("WebChat function template is missing");
 
-    var getWebTokenUri = APIRoutes.GetAbsoluteUri(APIRoutes.DealershipChatBotAPIRoutes.GetWebToken, _appSettings.DealershipChatBotConfiguration.HostURL);
+    var getWebTokenUri = APIRoutes.GetAbsoluteUri(APIRoutes.DealershipChatBotAPIRoutes.GetWebTokenAPI, _appSettings.DealershipChatBotConfiguration.HostURL);
     var getWebChatMessageUri = APIRoutes.GetAbsoluteUri(APIRoutes.DealershipChatBotAPIRoutes.WebChatMessagesAPI, _appSettings.DealershipChatBotConfiguration.HostURL);
 
     ArgumentNullException.ThrowIfNull(getWebTokenUri);

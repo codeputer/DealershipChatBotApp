@@ -1,4 +1,6 @@
-﻿using DealerWebPageBlazorWebAppShared.APIEndpoints;
+﻿using System.Text.Json;
+
+using DealerWebPageBlazorWebAppShared.APIEndpoints;
 
 using Microsoft.AspNetCore.Authorization;
 
@@ -23,36 +25,82 @@ public class WebchatMessagesAPIRouteHandler : IRouteHandlerDelegate<IResult>
   public bool RequireAuthorization => false;
 
   [Authorize("WebChatTokenPolicy")]
-  public async Task<IResult> GetWebChatMessages(HttpRequest request, [FromServices] IBotFrameworkHttpAdapter adapter, [FromServices] IBot bot)
+  public IResult GetWebChatMessages(HttpContext httpContext, ChatWindowDTO chatWindowDTO)
   {
     _ = DealerWebPageBlazorWebAppShared.Policies.Policies.TokenTypePolicyValues.WebChatTokenPolicy;
-
-    ArgumentNullException.ThrowIfNull(adapter, nameof(adapter));
-    ArgumentNullException.ThrowIfNull(bot, nameof(bot));
+    if (chatWindowDTO is null)
+    {
+      return Results.BadRequest("Invalid Request");
+    }
+    var request = httpContext.Request;
     ArgumentNullException.ThrowIfNull(request?.HttpContext?.User?.Identity, nameof(request));
     _logger.LogDebug("Received WebChat Request");
 
-    if (request.HttpContext.User.Identity.IsAuthenticated)
-    {
-      // Retrieve JWT Token from header
-      var authorizationHeader = request.Headers["Authorization"].ToString();
-      ClaimsPrincipal? claimsPrincipal = _tokenHelper.DecryptJWTTokenForClaimsPrincipal(authorizationHeader);
-      if (claimsPrincipal is null || claimsPrincipal.Claims.Any() == false)
-      {
-        return Results.Unauthorized();
-      }
-
-      var dealershipId = _tokenHelper.GetClaimValue(claimsPrincipal, ClaimKeyValues.DealershipId);
-
-      //todo: Use dealershipId to fetch dealership-specific data
-
-      await adapter.ProcessAsync(request, request.HttpContext.Response, bot);
-    }
-    else
+    if (request.HttpContext.User.Identity.IsAuthenticated == false)
     {
       return Results.Unauthorized();
     }
 
-    return Results.Ok();
+    // Retrieve JWT Token from header
+    var authorizationHeader = request.Headers["Authorization"].ToString();
+    ClaimsPrincipal? claimsPrincipal = _tokenHelper.DecryptJWTTokenForClaimsPrincipal(authorizationHeader);
+    if (claimsPrincipal is null || claimsPrincipal.Claims.Any() == false)
+    {
+      return Results.Unauthorized();
+    }
+
+    var dealershipId = _tokenHelper.GetClaimValue(claimsPrincipal, ClaimKeyValues.DealershipId);
+    var dealerName = _tokenHelper.GetClaimValue(claimsPrincipal, ClaimKeyValues.DealerName);
+    dealerName = dealershipId switch
+    {
+      "123" => "Dealer 123",
+      "124" => "Dealer 124",
+      "125" => "Dealer 125",
+      _ => dealerName,
+    };
+
+    if (chatWindowDTO is null || chatWindowDTO.Questions is null)
+    {
+      return Results.BadRequest("Invalid Request");
+    }
+
+    if (chatWindowDTO.Questions.Count == 0 )
+    {
+      var startingQuestion = new Question
+      {
+        Asked = "Hello?",
+        Answer = $"Hello from {dealerName ?? "???"}! How can I help you today?"
+      };
+
+      chatWindowDTO.Questions.Add(startingQuestion);
+      return Results.Json(chatWindowDTO);
+    }
+
+
+    var firstQuestion = chatWindowDTO.Questions.First(); 
+    if (firstQuestion.Asked.StartsWith("Hello") && string.IsNullOrEmpty(firstQuestion.Answer) )
+    {
+      firstQuestion.Asked = "Hello?";
+      firstQuestion.Answer = $"Hello from {dealerName ?? "???"}! How can I help you today?";
+      
+      return Results.Json(chatWindowDTO);
+    }
+
+
+    var lastQuestion = chatWindowDTO.Questions.Last();
+    if (lastQuestion.Answer is null)
+    {
+      lastQuestion.Asked = "Nothing was asked";
+      lastQuestion.Answer = "Please ask a question that I can answer";
+      return Results.Json(chatWindowDTO);
+    }
+
+    if (string.IsNullOrWhiteSpace(lastQuestion.Answer))
+    {
+      lastQuestion.Answer = $"After thinking about question for a long time. The answer is 42! :)";
+      return Results.Json(chatWindowDTO);
+    }
+
+    return Results.Json(chatWindowDTO);
   }
 }

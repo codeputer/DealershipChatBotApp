@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 using DealerWebPageBlazorWebAppShared.Utilities.String;
 
 namespace DealerWebPageBlazorWebAppShared.DTOModels;
+
+/// <summary>
+/// Returns a base 64 encoded string which carries the javascript for the dealer window
+/// </summary>
 public class CustomizedDealerFunctionDTO
 {
   public required string CustomizedScript { get; init; }

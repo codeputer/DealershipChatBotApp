@@ -1,5 +1,6 @@
 //DealerShipChatBot/Program.cs
 using DealershipChatBot.APIRouteHandlers;
+using DealershipChatBot.TokenMiddleware;
 
 using DealerWebPageBlazorWebAppShared.Managers;
 using DealerWebPageBlazorWebAppShared.Policies;
@@ -23,10 +24,13 @@ builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, VersionAPIRouteHan
 builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, WebchatMessagesAPIRouteHandler>();
 builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GenerateTokenAPIRouteHandler>();
 builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DecryptTokenAPIRouteHandler>();
-builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetWebChatArtifactsAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetDealerChatWindowScriptAPIHandler>();
 builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetWebTokenAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetListOfDealersAPI>();
 
-builder.Services.AddTransient<DealerShipTokenCache>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetDealerChatWindowScriptForDemo>();
+
+builder.Services.AddSingleton<DealerShipTokenCache>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
@@ -47,71 +51,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
       options.TokenValidationParameters = tokenHelper.GetTokenValidationParameters();
-
-      options.Events = new JwtBearerEvents
-      {
-        OnAuthenticationFailed = context =>
-        {
-          Console.WriteLine("OnAuthenticationFailed: " + context.Exception.Message);
-          if (context.Exception is SecurityTokenExpiredException)
-          {
-            context.Response.Headers.Append("Token-Expired", "true");
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-
-            // Optionally log the failure or take custom action
-            return context.Response.WriteAsync("Token has expired.");
-          }
-
-          options.Events = new JwtBearerEvents
-          {
-            OnAuthenticationFailed = context =>
-            {
-              Console.WriteLine("OnAuthenticationFailed: " + context.Exception.Message);
-              if (context.Exception is SecurityTokenExpiredException)
-              {
-                context.Response.Headers.Append("Token-Expired", "true");
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-
-                // Optionally log the failure or take custom action
-                return context.Response.WriteAsync("Token has expired.");
-              }
-              if (context.Response.HasStarted == false)
-              {
-                context.Response.StatusCode = 401;
-                context.Response.ContentType = "application/json";
-                var result = System.Text.Json.JsonSerializer.Serialize(new { message = "Authentication failed" });
-                return context.Response.WriteAsync(result);
-              }
-              return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-              Console.WriteLine("OnChallenge: " + context.AuthenticateFailure?.Message);
-              if (context.Response.HasStarted == false)
-              {
-                context.Response.StatusCode = 401;
-                context.Response.ContentType = "application/json";
-                var result = System.Text.Json.JsonSerializer.Serialize(new { message = "You are not authorized" });
-                return context.Response.WriteAsync(result);
-              }
-              return Task.CompletedTask;
-            }
-          };
-          return Task.CompletedTask;
-        },
-        OnChallenge = context =>
-        {
-          Console.WriteLine("OnChallenge: " + context.AuthenticateFailure?.Message);
-          if (context.Response.HasStarted == false)
-          {
-            context.Response.StatusCode = 401;
-            context.Response.ContentType = "application/json";
-            var result = System.Text.Json.JsonSerializer.Serialize(new { message = "You are not authorized" });
-            return context.Response.WriteAsync(result);
-          }
-          return Task.CompletedTask;
-        }
-      };
+      options.ConfigureCustomEvents(logger);
     });
 
 #if DEBUG
