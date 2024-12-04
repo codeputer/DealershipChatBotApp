@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <None Update="Templates\InsertWebChatWindow.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

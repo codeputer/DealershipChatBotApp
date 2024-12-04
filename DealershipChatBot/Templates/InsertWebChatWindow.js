@@ -1,6 +1,8 @@
 ﻿(async function () {
   const webTokenUrl = "{webTokenUrl}"; // URL to fetch WebChat token
   const chatEndpointUrl = "{chatEndpointUrl}"; // URL for WebChat messages
+  const uniqueScriptId = "{ScriptId}";
+  const webtokenId = `webToken_${uniqueScriptId}`
 
   // Function to fetch a new WebToken
   async function fetchWebToken() {
@@ -18,7 +20,7 @@
     const newToken = data.jwttoken;
 
     // Save the token to localStorage
-    localStorage.setItem("webToken", newToken);
+    localStorage.setItem(`${webtokenId}`, newToken);
 
     console.log("Fetched and saved new WebToken:", newToken);
 
@@ -27,7 +29,7 @@
 
   // Function to get a valid token (reuse or fetch new)
   async function getWebToken() {
-    let token = localStorage.getItem("webToken");
+    let token = localStorage.getItem(`${webtokenId}`);
     if (!token) {
       console.log("No token in storage. Fetching a new one...");
       token = await fetchWebToken();
@@ -132,6 +134,8 @@
     `;
   document.head.appendChild(style);
 
+
+  
   // Initialize questions array
   const questions = [
     { asked: "Hello?", answer: "" },
@@ -142,6 +146,7 @@
 
   // Send initial chat data after questions are initialized
   try {
+   
     console.log("sending initial question");
     const initialResponse = await sendChatData(questions);
     // Update answers based on server response
@@ -164,6 +169,7 @@
 
   // Populate chatWindow with questions
   function updateChatWindow() {
+    console.log(`Script GUID:${uniqueScriptId}`);
     console.log("Updating chat window...");
     const chatWindow = document.querySelector("#chatWindow");
     chatWindow.innerHTML = ""; // Clear existing options

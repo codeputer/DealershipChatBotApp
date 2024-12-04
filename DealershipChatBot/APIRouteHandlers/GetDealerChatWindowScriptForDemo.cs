@@ -1,12 +1,16 @@
 ﻿
+using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
+
 namespace DealershipChatBot.APIRouteHandlers;
 
 public class GetDealerChatWindowScriptForDemo : IRouteHandlerDelegate<IResult>
 {
   private readonly AppSettings _appSettings;
-  public GetDealerChatWindowScriptForDemo(AppSettings appSettings)
+  private readonly ILogger<GetDealerChatWindowScriptForDemo> _logger;
+  public GetDealerChatWindowScriptForDemo(AppSettings appSettings, ILogger<GetDealerChatWindowScriptForDemo> logger)
   {
     _appSettings = appSettings;
+    _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
   public string RouteName => APIRoutes.DealershipChatBotAPIRoutes.GetDealershipChatWindowScriptForDemoAPI.ToString();
@@ -31,6 +35,17 @@ public class GetDealerChatWindowScriptForDemo : IRouteHandlerDelegate<IResult>
       throw new Exception($"Dealership Id: {dealerShipId} needs to be created");
     }
 
+    var scriptGuidId = Guid.CreateVersion7().ToString();
+#if DEBUG
+    var decypted = tokenHelper.DecryptJWTTokenForClaimsPrincipal(dealerShipJwtToken);
+    var dealerIdTest = tokenHelper.GetClaimValue(decypted, ClaimKeyValues.DealershipId);
+    if (dealerIdTest != dealerShipId)
+    {
+      System.Diagnostics.Debugger.Break();
+    }
+    _logger.LogDebug("DealerShipId: {dealerShipId} ScriptId: {newguid}", dealerShipId, scriptGuidId);
+#endif
+
     var templateFunction = _appSettings.DealershipChatBotConfiguration.ReadWebChatFunctionTemplate();
     if (string.IsNullOrWhiteSpace(templateFunction))
       return Results.InternalServerError("WebChat function template is missing");
@@ -46,6 +61,7 @@ public class GetDealerChatWindowScriptForDemo : IRouteHandlerDelegate<IResult>
         .Replace("{dealerJWTToken}", dealerShipJwtToken)
         .Replace("{webTokenUrl}", getWebTokenUri.ToString())
         .Replace("{chatEndpointUrl}", getWebChatMessageUri.ToString())
+        .Replace("{ScriptId}", scriptGuidId)
         .ToString();
 
     return Results.Json(CustomizedDealerFunctionDTO.CustomizedDealerFunctionDTOFactory(tailoredTemplateFunction));

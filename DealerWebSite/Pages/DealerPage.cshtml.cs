@@ -16,8 +16,7 @@ public partial class DealerPageModel : PageModel
     _logger = logger;
   }
 
-  [FromQuery]
-  public required string DealerShipId { get; set; }
+  public string DealerShipId { get; set; } = string.Empty;
 
   public string DealerScript { get; set; } = string.Empty;
 
@@ -33,6 +32,7 @@ public partial class DealerPageModel : PageModel
 
   public async Task<CustomizedDealerFunctionDTO> GetScript(string dealerShipId)
   {
+    _logger.LogDebug("Dealer Page for Dealer:>{dealerShipId}<", dealerShipId);
     var httpClient = _httpClientFactory.CreatedNamedHttpClient(HttpNamedClients.DealershipChatBot);
 
     var url = APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GetDealershipChatWindowScriptForDemoAPI);

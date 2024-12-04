@@ -59,6 +59,11 @@ public class WebchatMessagesAPIRouteHandler : IRouteHandlerDelegate<IResult>
       _ => dealerName,
     };
 
+    if (dealerName.Contains(dealershipId) == false)
+    {
+      System.Diagnostics.Debugger.Break();
+    }
+
     if (chatWindowDTO is null || chatWindowDTO.Questions is null)
     {
       return Results.BadRequest("Invalid Request");
