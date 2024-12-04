@@ -71,7 +71,7 @@
         <button id="askButton">Ask</button>
     </div>
     <div id="statusMessage"></div>
-`;
+  `;
   document.body.appendChild(chatContainer);
 
   // Add embedded CSS
@@ -106,7 +106,6 @@
             color: #666;
             margin-top: 10px;
         }
-        /* Style for the chat window */
         #chatWindow {
           width: 100%;
           height: 300px;
@@ -116,25 +115,19 @@
           font-family: Arial, sans-serif;
           font-size: 14px;
         }
-
-        /* Container for each message */
         .message-container {
           margin-bottom: 10px;
         }
-
-        /* Style for the question */
         .question {
           text-align: left;
           font-weight: bold;
           margin-bottom: 5px;
         }
-
-        /* Style for the answer */
         .answer {
           text-align: right;
           word-wrap: break-word;
-          max-width: 50%; /* Adjust this value as needed */
-          margin-left: auto; /* Push the answer to the right */
+          max-width: 50%;
+          margin-left: auto;
         }
     `;
   document.head.appendChild(style);
@@ -149,15 +142,15 @@
 
   // Send initial chat data after questions are initialized
   try {
-    console.log("sending initial question")
+    console.log("sending initial question");
     const initialResponse = await sendChatData(questions);
     // Update answers based on server response
-    console.log("Initial Response received")
+    console.log("Initial Response received");
     initialResponse.questions.forEach((question, idx) => {
       if (questions[idx]) {
-        console.log(`idx:${idx}`)
-        console.log(`asked:${question.asked}`)
-        console.log(`answer:${question.answer} || "n/a"`)
+        console.log(`idx:${idx}`);
+        console.log(`asked:${question.asked}`);
+        console.log(`answer:${question.answer} || "n/a"`);
         questions[idx].answer = question.answer || "";
       }
     });
@@ -169,7 +162,6 @@
     console.error("Error sending initial chat data:", error);
   }
 
-
   // Populate chatWindow with questions
   function updateChatWindow() {
     console.log("Updating chat window...");
@@ -179,76 +171,66 @@
     questions.forEach((question) => {
       console.log(`Question: ${question.asked} Answer: ${question.answer}`);
 
-      // Create a container for question and answer
       const messageContainer = document.createElement("div");
       messageContainer.classList.add("message-container");
 
-      // Create a div for the question
       const questionDiv = document.createElement("div");
       questionDiv.classList.add("question");
       questionDiv.textContent = question.asked;
 
-      // Create a div for the answer
       const answerDiv = document.createElement("div");
       answerDiv.classList.add("answer");
       answerDiv.textContent = question.answer || "";
 
-      // Append question and answer to the container
       messageContainer.appendChild(questionDiv);
       messageContainer.appendChild(answerDiv);
 
-      // Append the container to the chat window
       chatWindow.appendChild(messageContainer);
     });
 
     chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to the last question
   }
 
-
-  // Add event listener for the "Ask" button
-  document.querySelector("#askButton").addEventListener("click", async () => {
-    console.log("Ask button clicked!");
+  // Function to handle user input
+  async function handleUserInput() {
     const chatInput = document.querySelector("#chatInput");
     const questionText = chatInput.value.trim();
     if (!questionText) return;
 
-    // Add the new question to the array
     questions.push({ asked: questionText, answer: "" });
 
-    // Clear the input box
     chatInput.value = "";
 
-    // Update the chat window with the new question
     updateChatWindow();
 
-    // Display status message
     const statusMessage = document.querySelector("#statusMessage");
     statusMessage.textContent = "Sending your question...";
-    console.log(statusMessage.textContent);
 
-    // Send the data to the server
     try {
       const response = await sendChatData(questions);
-      // Update answers based on server response
       response.questions.forEach((resp, idx) => {
         if (questions[idx]) {
           questions[idx].answer = resp.answer || "";
         }
       });
 
-      // Update the chat window again with the server response
       updateChatWindow();
-
-      // Clear status message
       statusMessage.textContent = "Response received!";
     } catch (error) {
       console.error("Error sending chat data:", error);
       statusMessage.textContent = "Error sending question. Please try again.";
     }
-  });
+  }
 
-  // Initialize the chat window with the default question
-  updateChatWindow();
+  // Event listener for "Ask" button
+  document.querySelector("#askButton").addEventListener("click", handleUserInput);
+
+  // Event listener for "Enter" key in the input field
+  document.querySelector("#chatInput").addEventListener("keypress", (event) => {
+    if (event.key === "Enter") {
+      handleUserInput();
+    }
+  });
 
   // Ensure the WebToken is available at script startup
   await getWebToken();
