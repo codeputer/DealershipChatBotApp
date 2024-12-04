@@ -1,61 +1,57 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Bot.Builder.Integration.AspNet.Core;
-using Microsoft.Bot.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using DealershipChatBot;
-using Microsoft.AspNetCore.Mvc;
-
 //DealerShipChatBot/Program.cs
+using DealershipChatBot.APIRouteHandlers;
+using DealershipChatBot.TokenMiddleware;
+
+using DealerWebPageBlazorWebAppShared.Managers;
+using DealerWebPageBlazorWebAppShared.Policies;
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddServiceDefaults();
+var logger = LoggerFactory.Create(config =>
+{
+  config.AddConsole();
+}).CreateLogger("Program");
+
+builder.AddServiceDefaults(logger);
 
 builder.Services.AddSingleton<IBotFrameworkHttpAdapter, CloudAdapter>();
-builder.Services.AddSingleton<AppSettings>();
+builder.Services.AddSingleton<DealershipChatBot.AppSettings>();
+builder.Services.AddSingleton<MinimalAPIRouteManager>();
+builder.Services.AddSingleton<TokenHelper>();
 
 builder.Services.AddTransient<IBot, DealershipBot>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, VersionAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, WebchatMessagesAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GenerateTokenAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, DecryptTokenAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetDealerChatWindowScriptAPIHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetWebTokenAPIRouteHandler>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetListOfDealersAPI>();
 
-builder.Services.AddScoped<TokenHelper>();
+builder.Services.AddTransient<IRouteHandlerDelegate<IResult>, GetDealerChatWindowScriptForDemo>();
+
+builder.Services.AddSingleton<DealerShipTokenCache>();
+
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+  options.AddPolicy("RelaxedCorsPolicy", builder =>
+  {
+    builder.AllowAnyOrigin()
+           .AllowAnyMethod()
+           .AllowAnyHeader();
+  });
+});
 
 //get the configuration of the application
-var appSettings = new AppSettings(builder.Configuration);
+var appSettings = new DealershipChatBot.AppSettings(builder.Configuration);
 var tokenHelper = new TokenHelper(appSettings);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-      var jwtCredentials = tokenHelper.GetTokenSigningCredentials();
-      var encryptionCredentials = tokenHelper.GetEncryptingCredentials();
-
       options.TokenValidationParameters = tokenHelper.GetTokenValidationParameters();
-      
-      options.Events = new JwtBearerEvents
-      {
-        OnAuthenticationFailed = context =>
-        {
-          if (context.Exception is SecurityTokenExpiredException)
-          {
-            context.Response.Headers.Append("Token-Expired", "true");
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-
-            // Optionally log the failure or take custom action
-            return context.Response.WriteAsync("Token has expired.");
-          }
-          context.Response.StatusCode = 401;
-          context.Response.ContentType = "application/json";
-          var result = System.Text.Json.JsonSerializer.Serialize(new { message = "Authentication failed" });
-          return context.Response.WriteAsync(result);
-        },
-        OnChallenge = context =>
-        {
-          context.Response.StatusCode = 401;
-          context.Response.ContentType = "application/json";
-          var result = System.Text.Json.JsonSerializer.Serialize(new { message = "You are not authorized" });
-          return context.Response.WriteAsync(result);
-        }
-      };
+      options.ConfigureCustomEvents(logger);
     });
 
 #if DEBUG
@@ -65,69 +61,31 @@ builder.Services.AddHttpClient("DefaultClient", client =>
 });
 #endif
 
-//builder.Services.AddAuthorizationBuilder()
-//  .AddPolicy("provideWebChatToken", policy =>
-//      policy.RequireClaim("provideWebChatToken"));
+//todo: authorization is policy based, where a policy has one or more claims
+builder.Services.AddAuthorizationBuilder()
+  .AddPolicy(Policies.TokenTypePolicyValues.DealershipChatTokenPolicy.ToString(), policy =>
+      policy.RequireClaim(ClaimKeyValues.TokenType.ToString(), TokenTypeValues.DealershipToken.ToString()));
+ 
+builder.Services.AddAuthorizationBuilder()
+  .AddPolicy(Policies.TokenTypePolicyValues.WebChatTokenPolicy.ToString(), policy =>
+      policy.RequireClaim(ClaimKeyValues.TokenType.ToString(), TokenTypeValues.WebChatToken.ToString()));
 
-builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+var minimalAPIRouteManager = app.Services.GetRequiredService<MinimalAPIRouteManager>();
+minimalAPIRouteManager.RegisterRoutes(app);
+
 app.MapDefaultEndpoints();
 
-var validateConfiguration = app.Services.GetRequiredService<AppSettings>();
+var validateConfiguration = app.Services.GetRequiredService<DealershipChatBot.AppSettings>();
 
+app.UseCors("RelaxedCorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
 
-app.MapGet("/Version", () => "1.0");
-
-app.MapGet("/api/GenerateToken", ([FromQuery] string dealershipId, [FromQuery] string tokenType, [FromServices] TokenHelper tokenHelper) =>
-{
-  if (string.IsNullOrWhiteSpace(dealershipId))
-  {
-    return Results.BadRequest("DealershipId is required");
-  }
-
-  if (string.IsNullOrWhiteSpace(tokenType))
-  {
-    return Results.BadRequest("TokenType is required");
-  }
-
-  var jwtSignedToken = tokenHelper.GenerateJWTToken(dealershipId, tokenType);
-
-  var encyptedJWTToken = tokenHelper.EncryptJwtToken(jwtSignedToken);
-
-  var decryptedToken = tokenHelper.DecryptJWTTokenForClaimsPrincipal(encyptedJWTToken);
-
-  if (decryptedToken is null)
-  {
-    return Results.BadRequest("Token could not be decrypted");
-  }
-
-  //base 64 encode for transport
-  var base64JWTEncryptedToken = TokenHelper.Base64Encode(encyptedJWTToken);
-
-  return Results.Ok(base64JWTEncryptedToken);
-});
-
-app.MapGet("/api/DecryptToken", ([FromQuery] string encryptedToken, [FromServices] TokenHelper tokenHelper) =>
-{
-  if (string.IsNullOrWhiteSpace(encryptedToken))
-  {
-    return Results.BadRequest("Token is required");
-  }
-
-  var asciiEncryptedToken = TokenHelper.Base64Decode(encryptedToken);
-
-  var claimsPrincipal = tokenHelper.DecryptJWTTokenForClaimsPrincipal(asciiEncryptedToken);
-  var claims = claimsPrincipal?.Claims.Select(c => new { c.Type, c.Value })?.ToList() ?? [];
-
-  return Results.Ok(claims);
-
-});
 
 //app.MapPost("/refresh-token", async (HttpContext context) =>
 //{
@@ -145,36 +103,6 @@ app.MapGet("/api/DecryptToken", ([FromQuery] string encryptedToken, [FromService
 //});
 
 
-//Protected API, must have a WebChatToken, issued by a DealershipToken
-app.MapPost("/api/messages", async (IBotFrameworkHttpAdapter adapter, IBot bot, ILogger<Program> logger, HttpRequest request) =>
-{
-  ArgumentNullException.ThrowIfNull(adapter, nameof(adapter));
-  ArgumentNullException.ThrowIfNull(bot, nameof(bot));
-  ArgumentNullException.ThrowIfNull(logger, nameof(logger));
-  ArgumentNullException.ThrowIfNull(request?.HttpContext?.User?.Identity, nameof(request));
-
-  if (request.HttpContext.User.Identity.IsAuthenticated)
-  {
-    var dealershipId = request.HttpContext.User.FindFirst("dealershipId")?.Value;
-    var tokenType = request.HttpContext.User.FindFirst("tokenType")?.Value;
-    if (dealershipId == null)
-    { 
-      logger.LogError("dealershipId is missing from the token claims");
-      request.HttpContext.Response.StatusCode = 401; return; 
-    }
-    if (tokenType == null)
-    {
-      logger.LogError("tokenType is missing from the token claims");
-      request.HttpContext.Response.StatusCode = 401; return;
-    }
-
-    // Use dealershipId to fetch dealership-specific data
-    await adapter.ProcessAsync(request, request.HttpContext.Response, bot);
-  }
-  else
-  {
-    request.HttpContext.Response.StatusCode = 401;
-  }
-});
-
 app.Run();
+
+

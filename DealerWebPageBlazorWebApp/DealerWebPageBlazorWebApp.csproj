@@ -8,6 +8,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DealershipChatBotAppAspire.ServiceDefaults\DealershipChatBotAppAspire.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\DealerWebPageBlazorwebAppSharedState\DealerWebPageBlazorWebAppShared.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\images\favicon.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Resources\" />
+    <Folder Include="wwwroot\js\" />
   </ItemGroup>
 
 </Project>

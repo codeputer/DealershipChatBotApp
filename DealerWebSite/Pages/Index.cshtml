@@ -1,0 +1,47 @@
+﻿@page "/"
+@model IndexModel
+@{
+  ViewData["Title"] = "Razor Page Example";
+}
+
+<h1>Available Dealership Ids</h1>
+
+
+@if (Model.DealershipIds.Count == 0)
+{
+  <div id="idList">
+    <p>Loading IDs...</p>
+  </div>
+}
+<!-- Div to hold the dynamically generated list -->
+<div id="idList">
+  <label for="dealershipIdList">Dealership ID:</label>
+  <br />
+  <select id="dealershipSelect" name="dealershipSelect" onchange="handleSelection(this.value)" size="5">
+    @foreach (var id in Model.DealershipIds)
+    {
+      <option value="@id">@id</option>
+    }
+  </select>
+
+  <p id="selectedDealership">Selected ID: None</p>
+  <br />
+</div>
+
+<script>
+  function handleSelection(value) {
+          document.getElementById('selectedDealership').textContent = 'Selected ID: ' + value;
+          navigateToDealerPage(value);
+  }
+
+  function navigateToDealerPage(dealershipId) {
+      if (dealershipId) {
+          window.location.href = `/DealerPage/${dealershipId}`;
+      }
+  }
+  
+</script>
+
+
+
+

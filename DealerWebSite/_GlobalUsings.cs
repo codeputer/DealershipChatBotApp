@@ -1,0 +1,9 @@
+﻿global using DealerWebPageBlazorWebAppShared.Configuration;
+global using DealerWebPageBlazorWebAppShared.Resources;
+global using DealerWebPageBlazorWebAppShared.APIEndpoints;
+global using Microsoft.AspNetCore.Mvc;
+global using DealerWebPageBlazorWebAppShared.DTOModels;
+global using DealerWebPageBlazorWebAppShared.Extensions;
+global using Microsoft.AspNetCore.Components;
+global using Microsoft.AspNetCore.Mvc.RazorPages;
+global using Microsoft.AspNetCore.WebUtilities;

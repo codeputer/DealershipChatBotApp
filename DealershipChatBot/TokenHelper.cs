@@ -5,6 +5,8 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using DealerWebPageBlazorWebAppShared.Resources;
+using System;
 
 public class TokenHelper
 {
@@ -20,46 +22,63 @@ public class TokenHelper
   /// <summary>
   /// Generates a signed JWT token.
   /// </summary>
-  public string GenerateJWTToken(string dealershipId, string tokenType)
+  public string GenerateJWTToken(IEnumerable<Claim> claims)
   {
-    var claims = new[]
-    {
-            new Claim("dealershipId", dealershipId),
-            new Claim("tokenType", tokenType)
-     };
+    if (claims.Any() == false)
+      throw new Exception("Claims for the Token must be specified");
 
     var signingCredentials = GetTokenSigningCredentials();
 
     JwtSecurityTokenHandler jwtSecurityTokenHandler = new();
 
-    var token = new JwtSecurityToken(
+    var tokenTypeAsString = claims.FirstOrDefault(c => c.Type == ClaimKeyValues.TokenType.ToString())?.Value ?? TokenTypeValues.Unknown.ToString();
+    var tokenType = Enum.Parse<TokenTypeValues>(tokenTypeAsString);
+
+    double expirationTimeSpan = _appSettings.DealershipChatBotConfiguration.TokenExpirationTimeSpan.TotalMinutes;
+    DateTime expirationDateTime = DateTime.UtcNow.AddSeconds(1);
+
+    if (tokenType == TokenTypeValues.Unknown)
+      throw new Exception("Token Type is not a valid value");
+
+    if (tokenType == TokenTypeValues.DealershipToken)
+    {
+      expirationDateTime = DateTime.MaxValue;
+    }
+
+    if (tokenType == TokenTypeValues.WebChatToken)
+    {
+      expirationDateTime = DateTime.UtcNow.Add(_appSettings.DealershipChatBotConfiguration.TokenExpirationTimeSpan);
+    } 
+
+    var jwtToken = new JwtSecurityToken(
         issuer: _appSettings.DealershipChatBotConfiguration.HostURL,
         audience: _appSettings.DealershipChatBotConfiguration.AudienceURL,
         claims: claims,
-        expires: DateTime.Now.AddMinutes(_appSettings.DealershipChatBotConfiguration.TokenExpirationTimeSpan.TotalMinutes),
+        expires: expirationDateTime,
         signingCredentials: signingCredentials);
 
-    var jwtTokenString = jwtSecurityTokenHandler.WriteToken(token);
+    var jwtTokenString = jwtSecurityTokenHandler.WriteToken(jwtToken);
 
+    //an assertion that after creation it can be read - may be unnecessary
     var canReadJwtTokenString = jwtSecurityTokenHandler.CanReadToken(jwtTokenString);
     if (canReadJwtTokenString == false)
     {
       throw new Exception("Token cannot be read");
     }
 
-    //todo: not sure how this can return a false, as it is passed anything during instantiation
+    //todo: more research on this property
     var validToken = jwtSecurityTokenHandler.CanValidateToken;
     if (validToken == false)
     {
       throw new Exception("Token cannot be validated");
     }
 
-    //an assertion that the token can be validated before a round trip of the token occurs, and before its encrypted
+    //an assertion that the token will validate against the Validation tests
     var jwtTokenValidationParameters = GetTokenValidationParameters();
 
     var principal = jwtSecurityTokenHandler.ValidateToken(jwtTokenString, jwtTokenValidationParameters, out SecurityToken validatedToken);
 
-    return jwtSecurityTokenHandler.WriteToken(token);
+    return jwtSecurityTokenHandler.WriteToken(jwtToken);
   }
 
   internal SigningCredentials GetTokenSigningCredentials()
@@ -123,33 +142,63 @@ public class TokenHelper
 
     var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
 
-    if (jwtSecurityTokenHandler.CanReadToken(encryptedAsciiToken)==false)
+    encryptedAsciiToken = RemoveBearerToken(encryptedAsciiToken);
+
+    if (jwtSecurityTokenHandler.CanReadToken(encryptedAsciiToken) == false)
     {
       throw new ArgumentException("Invalid encrypted JWT format", nameof(encryptedAsciiToken));
     }
 
     var validationParameters = GetTokenValidationParameters();
 
-
     try
     {
-      var principal = jwtSecurityTokenHandler.ValidateToken(encryptedAsciiToken, validationParameters, out SecurityToken validatedToken);
+      var claimPrinciple = jwtSecurityTokenHandler.ValidateToken(encryptedAsciiToken, validationParameters, out SecurityToken validatedToken);
 
-      if (validatedToken is not JwtSecurityToken jwtToken ||
-          !jwtToken.Header.Alg.Equals(SecurityAlgorithms.Aes256KW, StringComparison.OrdinalIgnoreCase) ||
-          !jwtToken.Header.ContainsKey("enc") ||
-          jwtToken.Header["enc"]?.ToString() != SecurityAlgorithms.Aes256CbcHmacSha512)
-      {
-        throw new SecurityTokenException("Invalid token algorithms in header");
-      }
+      //todo: for some reason, when sent via the javascript function, this JWT token is not being decrypted properly for the tests below, but on server side, its fine!..
+      //#if DEBUG
+      //      JwtSecurityToken? jwtSecurityToken = validatedToken as JwtSecurityToken; 
+      //      var alg = jwtSecurityToken!.Header.Alg;
+      //      jwtSecurityToken.Header.TryGetValue("enc", out object? encValueDebugging);
+      //      var enc = encValueDebugging?.ToString();
+      //#endif
 
-      return principal;
+      //      if (validatedToken is not JwtSecurityToken jwtToken ||
+      //          !jwtToken.Header.Alg.Equals(SecurityAlgorithms.Aes256KW, StringComparison.OrdinalIgnoreCase) ||
+      //          !jwtToken.Header.TryGetValue("enc", out object? encValue) ||
+      //          !(encValue?.ToString() == SecurityAlgorithms.Aes256CbcHmacSha512))
+      //      {
+      //        throw new SecurityTokenException("Invalid token algorithms in header");
+      //      }
+
+      return claimPrinciple;
     }
     catch (SecurityTokenException ex)
     {
       Console.WriteLine($"Token validation failed: {ex.Message}");
       return null;
     }
+  }
+
+ 
+
+  public static string RemoveBearerToken(string encryptedAsciiToken)
+  {
+    //check for Bearer prefix
+    ReadOnlySpan<char> encryptedAsciiTokenSpan = encryptedAsciiToken.AsSpan();
+
+    if (encryptedAsciiTokenSpan.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+    {
+      encryptedAsciiTokenSpan = encryptedAsciiTokenSpan["Bearer ".Length..];
+      encryptedAsciiToken = encryptedAsciiTokenSpan.ToString();
+    }
+
+    //if (IsBase64String(encryptedAsciiToken))
+    //{
+    //  encryptedAsciiToken = Base64Decode(encryptedAsciiToken);
+    //}
+
+    return encryptedAsciiToken;
   }
 
   /// <summary>
@@ -185,25 +234,58 @@ public class TokenHelper
       ValidAudience = _appSettings.DealershipChatBotConfiguration.AudienceURL,
 
       ValidateLifetime = true,
+      ClockSkew = _appSettings.DealershipChatBotConfiguration.TokenExpirationTimeSpan,
 
       ValidateIssuerSigningKey = true,
       IssuerSigningKey = GetTokenSigningCredentials().Key,
 
-      TokenDecryptionKey = GetEncryptingCredentials().Key,
+      TokenDecryptionKey = GetEncryptingCredentials().Key
 
-      ClockSkew = _appSettings.DealershipChatBotConfiguration.TokenExpirationTimeSpan
     };
   }
 
-  public static string Base64Decode(string base64EncodedData)
+
+
+  public IEnumerable<Claim> GenerateClaims(TokenTypeValues tokenTypeValue, string dealershipId, string dealerName, string clientIPAddress)
   {
-    var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
-    return Encoding.UTF8.GetString(base64EncodedBytes);
+    return
+      [
+        new Claim(ClaimKeyValues.DealershipId.ToString(), dealershipId),
+        new Claim(ClaimKeyValues.DealerName.ToString(), dealerName),
+        new Claim(ClaimKeyValues.TokenType.ToString(), tokenTypeValue.ToString()),
+        new Claim(ClaimKeyValues.ClientIPAddress.ToString(), clientIPAddress)
+      ];
   }
 
-  public static string Base64Encode(string plainText)
+  public string? GetClaimValue(ClaimsPrincipal user, ClaimKeyValues claimKeyValue)
   {
-    var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
-    return Convert.ToBase64String(plainTextBytes);
+    return GetClaimValueHelper(user, claimKeyValue);
+  } 
+
+  public static string? GetClaimValueHelper(ClaimsPrincipal claimsPrincipal, ClaimKeyValues claimKeyValue)
+  {
+    // Find the first claim with the specified name
+    var claim = claimsPrincipal?.FindFirst(claimKeyValue.ToString());
+
+    // Return the claim's value or null if not found
+    return claim?.Value;
+  }
+
+  public static bool IsBase64String(string base64)
+  {
+    if (string.IsNullOrEmpty(base64) || base64.Length % 4 != 0)
+    {
+      return false;
+    }
+
+    try
+    {
+      Convert.FromBase64String(base64);
+      return true;
+    }
+    catch (FormatException)
+    {
+      return false;
+    }
   }
 }

@@ -14,22 +14,19 @@
       </NavLink>
     </div>
 
-    @for (int i = 1; i <= 3; i++)
-    {
-      var webPageName = $"webPage{i}";
-      var webPageTitle = $"Web Page {i}";
-      <div class="nav-item px-3">
-        <NavLink class="nav-link" href="@webPageName">
-          <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @webPageName
-        </NavLink>
-      </div>
-    }
-
     <div class="nav-item px-3">
       <NavLink class="nav-link" href="jwttokenManagement">
         <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> JWT Token Mgmt
       </NavLink>
     </div>
+
+    <div class="nav-item px-3">
+      <NavLink class="nav-link" href="script-generator">
+        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Dealer Script Mgmt
+      </NavLink>
+    </div>
+    
+
   </nav>
 </div>
 

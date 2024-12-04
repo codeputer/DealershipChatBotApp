@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.Hosting;
 // To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
 public static class Extensions
 {
-  public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+  public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder, ILogger logger) where TBuilder : IHostApplicationBuilder
   {
     builder.ConfigureOpenTelemetry();
 
@@ -26,9 +26,12 @@ public static class Extensions
 
     builder.Services.ConfigureHttpClientDefaults(http =>
     {
+
+      //todo: during debug, the "resilience" handler is not added, we need to adjust the settings rather than not have them for debug
+#if !DEBUG
       // Turn on resilience by default
       http.AddStandardResilienceHandler();
-
+#endif
       // Turn on service discovery by default
       http.AddServiceDiscovery();
     });

@@ -1,4 +1,5 @@
 ﻿
+using DealershipChatBotAppSettings = DealershipChatBot.AppSettings;
 using DealershipChatBot.Configuration;
 
 namespace DealershipChatBot;

@@ -1,13 +1,16 @@
-﻿using DealerWebPageBlazorWebApp.Components.Resources;
-
-using Microsoft.AspNetCore.Components;
-
-using System.Net.Http;
+﻿using DealerWebPageBlazorWebAppShared.APIEndpoints;
+using DealerWebPageBlazorWebAppShared.DTOModels;
 
 namespace DealerWebPageBlazorWebApp.Components.Pages;
 
 public partial class JwtTokenManagement
 {
+  public JwtTokenManagement()
+  {
+    
+  }
+
+
   [Inject]
   public required IHttpClientFactory httpClientFactory { get; init; }
 
@@ -17,62 +20,119 @@ public partial class JwtTokenManagement
   [Inject]
   public required DealerShipTokenCache DealerShipTokenCache { get; init; }
 
-  private string dealershipId = string.Empty;
+  private string selectedDealershipId = string.Empty;
   private string jwtEncryptedBase64EncodedPanel = string.Empty;
-  private string tokenType = TokenTypes.WebChatToken;
+  private TokenTypeValues selectedTokenTypeValue = TokenTypeValues.DealershipToken;
   private string decryptedTokenPanel = string.Empty;
 
-  public async Task CreateNewToken()
+  public async Task OnSeedDataClick()
   {
-    decryptedTokenPanel = string.Empty;
-    jwtEncryptedBase64EncodedPanel = string.Empty;
-
-    var newJWTToken = await GetNewJwtToken();
-
-    DealerShipTokenCache.SetToken(dealershipId, tokenType, newJWTToken);
-
-    jwtEncryptedBase64EncodedPanel = newJWTToken;
+    ValidateDealerIdAndReset(true);
+    DealerShipTokenCache.DealerJWTTokenList.Clear();
+    for (int i = 123; i <= 125; i++)
+    {
+      var dealerShipId = i.ToString();
+      var newJWTToken = await GetNewJwtToken(dealerShipId, TokenTypeValues.DealershipToken);
+      DealerShipTokenCache.UpsertJwtToken(dealerShipId, TokenTypeValues.DealershipToken, newJWTToken);
+    }
   }
 
-  public void UseCachedToken()
+  public async Task OnGenerateTokenClick()
   {
+    if (ValidateDealerIdAndReset() == false)
+    {
+      return;
+    }
+
+    var newJWTToken = await GetNewJwtToken(this.selectedDealershipId, this.selectedTokenTypeValue);
+
+    if (string.IsNullOrEmpty(newJWTToken))
+    {
+      jwtEncryptedBase64EncodedPanel = "Failed to generate token.";
+      return;
+    }
+
+    DealerShipTokenCache.UpsertJwtToken(selectedDealershipId, selectedTokenTypeValue, newJWTToken);
+
+    jwtEncryptedBase64EncodedPanel = newJWTToken;
+    
+  }
+  
+
+  /// <summary>
+  /// Validates that we have a DealerID, and if so, we reset the UX and process
+  /// </summary>
+  /// <returns></returns>
+  public bool ValidateDealerIdAndReset(bool bypassForTesting = false)
+  {
+    if (string.IsNullOrEmpty(selectedDealershipId) && bypassForTesting == false)
+    {
+      decryptedTokenPanel = "No dealership id provided.";
+      return false;
+    }
+    
+    if (bypassForTesting == true)
+    {
+      this.selectedDealershipId = string.Empty;
+      this.selectedTokenTypeValue = TokenTypeValues.Unknown;  
+    }
+
     this.jwtEncryptedBase64EncodedPanel = string.Empty;
     this.decryptedTokenPanel = string.Empty;
+    return true;
+  }
+
+  public void GetCachedTokenClick()
+  {
+    if (ValidateDealerIdAndReset()==false)
+      return;
 
     jwtEncryptedBase64EncodedPanel = GetCachedJwtToken();
+    
   }
 
   private string GetCachedJwtToken()
   {
-    if (string.IsNullOrEmpty(dealershipId))
+    if (string.IsNullOrEmpty(selectedDealershipId))
     {
       return "No dealership id provided.";
-    } 
+    }
 
-    if (string.IsNullOrEmpty(tokenType))
+    if (selectedTokenTypeValue == TokenTypeValues.Unknown)
     {
       return "No token type provided.";
     }
 
-    return DealerShipTokenCache.GetToken(dealershipId, tokenType) ?? $"No token found in cache for Dealership Id:>{dealershipId}< & TokenType:>{tokenType}<";
+    return DealerShipTokenCache.GetJwtToken(selectedDealershipId, selectedTokenTypeValue) ?? $"No token found in cache for Dealership Id:>{selectedDealershipId}< & TokenType:>{selectedTokenTypeValue}<";
   }
 
-  private async Task<string> GetNewJwtToken()
+  private async Task<string> GetNewJwtToken(string? dealershipId = null, TokenTypeValues? tokenTypeValue = TokenTypeValues.Unknown)
   {
-    var uriBuilder = new UriBuilder($"{AppSettings.ChatbotServiceConfiguration.ChatbotServiceUrl}/api/GenerateToken");
-    var query = System.Web.HttpUtility.ParseQueryString(uriBuilder.Query);
-    query["dealershipId"] = dealershipId;
-    query["tokenType"] = tokenType;
-    uriBuilder.Query = query.ToString();
-    var url = uriBuilder.ToString();
+    var generateTokenHostUrl = APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.GenerateTokenAPI);
 
-    var httpClient = httpClientFactory.CreateClient();
-    var response = await httpClient.GetAsync(url);
-    var jwtToken = string.Empty;  
-    if (response.IsSuccessStatusCode)
+    if (string.IsNullOrEmpty(dealershipId))
     {
-      jwtToken = await response.Content.ReadAsStringAsync();
-      jwtToken = jwtToken.Trim('"'); //the token and jwtpanel are in base 64 encoded format, no quotes
+      dealershipId = this.selectedDealershipId;
+    }
+
+    if (tokenTypeValue == TokenTypeValues.Unknown)
+    {
+      tokenTypeValue = selectedTokenTypeValue;
+    }
+
+    IDictionary<string, string?> queryParams = new Dictionary<string, string?>
+        {
+            { ClaimKeyValues.DealershipId.ToString(), dealershipId },
+            { ClaimKeyValues.TokenType.ToString(), tokenTypeValue.ToString() }
+        };
+    var urlWithQueryString = QueryHelpers.AddQueryString(generateTokenHostUrl, queryParams);
+
+    var dealershipChatBotHttpClient = httpClientFactory.CreatedNamedHttpClient(HttpNamedClients.DealershipChatBot);
+    var jWTTokenDTO = await dealershipChatBotHttpClient.GetFromJsonAsync<JWTTokenDTO>(urlWithQueryString);
+    var jwtToken = string.Empty;
+    if (jWTTokenDTO is not null)
+    {
+      jwtToken = jWTTokenDTO.JWTToken;  
     }
     else
     {
@@ -91,14 +151,15 @@ public partial class JwtTokenManagement
       return;
     }
 
-    var uriBuilder = new UriBuilder($"{AppSettings.ChatbotServiceConfiguration.ChatbotServiceUrl}/api/DecryptToken");
-    var query = System.Web.HttpUtility.ParseQueryString(uriBuilder.Query);
-    query["encryptedToken"] = jwtEncryptedBase64EncodedPanel;
-    uriBuilder.Query = query.ToString();
-    var url = uriBuilder.ToString();
+    var endpoint = APIRoutes.GetUrlPath(APIRoutes.DealershipChatBotAPIRoutes.DecryptTokenAPI);
+    IDictionary<string, string?> queryParams = new Dictionary<string, string?>
+        {
+            { "encryptedToken", jwtEncryptedBase64EncodedPanel }
+        };
+    var urlWithQueryString = QueryHelpers.AddQueryString(endpoint, queryParams);
 
-    var httpDecryptJWTTokenClient = httpClientFactory.CreateClient();
-    var response = await httpDecryptJWTTokenClient.GetAsync(url);
+    var httpDecryptJWTTokenClient = httpClientFactory.CreatedNamedHttpClient(HttpNamedClients.DealershipChatBot);
+    var response = await httpDecryptJWTTokenClient.GetAsync(urlWithQueryString);
     if (response.IsSuccessStatusCode)
     {
       var responseContent = await response.Content.ReadAsStringAsync();

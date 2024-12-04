@@ -1,0 +1,30 @@
+﻿@page "/script-generator"
+@rendermode InteractiveServer
+
+<h3>Dealer Script Generator</h3>
+
+<div>
+  <label for="dealershipIdList">Dealership ID:</label>
+  <br />
+  <select id="dealershipIdList" @bind="SelectedDealerId" size="5">
+    @foreach (var id in DealerShipTokenCache.DealerJWTTokenList)
+    {
+      <option value="@id">@id</option>
+    }
+  </select>
+  <br />
+</div>
+
+<div>
+  <label for="scriptOutput">Generated Script:</label>
+  <br />
+  <textarea id="scriptOutput" @bind="this.GeneratedScript" rows="15" cols="80" readonly></textarea>
+  <br />
+</div>
+
+<div>
+  <br />
+  <button @onclick="@GenerateDealershipWebchatWindowScript">Generate Script</button>
+  <button @onclick="CopyToClipboard" style="@CopyButtonStyle">@CopyButtonText</button>
+</div>
+

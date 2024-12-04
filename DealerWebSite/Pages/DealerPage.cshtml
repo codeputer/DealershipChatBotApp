@@ -1,0 +1,10 @@
+﻿@page "/DealerPage/{queryDealerShipId}"
+@model DealerWebSite.Pages.DealerPageModel
+
+<h1>Welcome to Dealer Page</h1>
+<p>Ask your questions in the chat below:</p>
+
+<!-- Dynamically include the script -->
+<script>
+  @Html.Raw(Model.DealerScript)
+</script>
